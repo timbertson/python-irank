@@ -52,27 +52,31 @@ def main(song):
 
 def modify_ratings(values):
 	changed = False
-	while True:
-		print values
-		print
-		key = raw_input("change: ").strip()
-		if not key: break
-		if not key in irank.KEYS:
-			print "invalid key!"
-			continue
+	try:
 		while True:
-			try:
-				value = raw_input("   1-5: ").strip()
-				if not value: break
-				value = int(value)
-				if value < 0 or value > 5:
-					raise ValueError("must be between 1 and 5")
-			except ValueError, e:
-				print e
+			print
+			print values
+			print
+			key = raw_input("change: ").strip()
+			if not key: break
+			if not key in irank.KEYS:
+				print "invalid key!"
 				continue
-			values[key] = value
-			changed = True
-			break
+			while True:
+				try:
+					value = raw_input("   1-5: ").strip()
+					if not value: break
+					value = int(value)
+					if value < 0 or value > 5:
+						raise ValueError("must be between 1 and 5")
+				except ValueError, e:
+					print e
+					continue
+				values[key] = value
+				changed = True
+				break
+	except EOFError:
+		pass
 	return changed
 
 
