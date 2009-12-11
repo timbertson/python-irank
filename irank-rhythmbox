@@ -1,0 +1,7 @@
+#!/bin/sh
+
+selected_file="`nowplaying rhythmbox`"
+[ -z "$selected_file" ] && exit 1
+
+irank "$selected_file"
+

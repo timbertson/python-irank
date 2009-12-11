@@ -1,0 +1,80 @@
+#!/usr/bin/env python
+
+from tagpy import FileRef
+import re
+import os
+import sys
+import readline
+
+import logging
+
+import irank
+
+class SimpleCompleter(object):
+	def __init__(self, options):
+		self.options = options
+
+	def complete(self, text, state):
+		response = None
+		if state == 0:
+			if text:
+				self.matches = [s for s in self.options if s and s.lower().startswith(text.lower())]
+				logging.debug('%s matches: %s', repr(text), self.matches)
+			else:
+				self.matches = self.options[:]
+				logging.debug('(empty input) matches: %s', self.matches)
+			
+			try:
+				response = self.matches[state]
+			except IndexError:
+				response = None
+			logging.debug('complete(%s, %s) => %s', repr(text), state, repr(response))
+			return response
+
+def init_rl():
+	readline.set_completer(SimpleCompleter(irank.KEYS).complete)
+	readline.parse_and_bind('tab: complete')
+
+
+def main(song):
+	file = FileRef(song)
+	tags = file.tag()
+
+	values = irank.parse(tags.comment)
+	print song
+	print '-' * 30
+	init_rl()
+	modified = modify_ratings(values)
+	if modified:
+		print irank.flatten(values)
+		tags.comment = irank.flatten(values)
+		file.save()
+
+def modify_ratings(values):
+	changed = False
+	while True:
+		print values
+		print
+		key = raw_input("change: ").strip()
+		if not key: break
+		if not key in irank.KEYS:
+			print "invalid key!"
+			continue
+		while True:
+			try:
+				value = raw_input("   1-5: ").strip()
+				if not value: break
+				value = int(value)
+				if value < 0 or value > 5:
+					raise ValueError("must be between 1 and 5")
+			except ValueError, e:
+				print e
+				continue
+			values[key] = value
+			changed = True
+			break
+	return changed
+
+
+if __name__ == '__main__':
+	main(*sys.argv[1:])
