@@ -10,6 +10,9 @@ import logging
 
 import irank
 
+LIST_MODE = False
+LS_FLAG = '-l'
+
 class SimpleCompleter(object):
 	def __init__(self, options):
 		self.options = options
@@ -44,6 +47,11 @@ def main(song):
 	print song
 	print '-' * 30
 	init_rl()
+
+	if LIST_MODE:
+		print values
+		return
+
 	modified = modify_ratings(values)
 	if modified:
 		print irank.flatten(values)
@@ -81,4 +89,8 @@ def modify_ratings(values):
 
 
 if __name__ == '__main__':
-	main(*sys.argv[1:])
+	args = sys.argv[1:]
+	if LS_FLAG in args:
+		args.remove(LS_FLAG)
+		LIST_MODE = True
+	main(*args)
