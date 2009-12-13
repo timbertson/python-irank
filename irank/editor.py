@@ -11,7 +11,6 @@ import logging
 import irank
 
 LIST_MODE = False
-LS_FLAG = '-l'
 
 class SimpleCompleter(object):
 	def __init__(self, options):
@@ -39,24 +38,21 @@ def init_rl():
 	readline.parse_and_bind('tab: complete')
 
 
-def main(song):
-	file = FileRef(song)
-	tags = file.tag()
+def main(*songs):
+	for song in songs:
+		print song
+		song = irank.Song(song)
+		print '-' * 30
+		init_rl()
 
-	values = irank.parse(tags.comment)
-	print song
-	print '-' * 30
-	init_rl()
+		if LIST_MODE:
+			print song.values
+			return
 
-	if LIST_MODE:
-		print values
-		return
-
-	modified = modify_ratings(values)
-	if modified:
-		print irank.flatten(values)
-		tags.comment = irank.flatten(values)
-		file.save()
+		modified = modify_ratings(song.values)
+		if modified:
+			print song.values.flatten()
+			song.save()
 
 def modify_ratings(values):
 	changed = False
@@ -67,17 +63,24 @@ def modify_ratings(values):
 			print
 			key = raw_input("change: ").strip()
 			if not key: break
+			key_parts = key.split()
+			value = None
+			if len(key_parts) > 1 and key_parts[-1].isdigit():
+				value = key_parts.pop(-1)
+				key = " ".join(key_parts)
 			if not key in irank.KEYS:
 				print "invalid key!"
 				continue
 			while True:
 				try:
-					value = raw_input("   1-5: ").strip()
-					if not value: break
+					if value is None:
+						value = raw_input("   1-5: ").strip()
+						if not value: break
 					value = int(value)
 					if value < 0 or value > 5:
 						raise ValueError("must be between 1 and 5")
 				except ValueError, e:
+					value = None
 					print e
 					continue
 				values[key] = value
@@ -87,10 +90,3 @@ def modify_ratings(values):
 		pass
 	return changed
 
-
-if __name__ == '__main__':
-	args = sys.argv[1:]
-	if LS_FLAG in args:
-		args.remove(LS_FLAG)
-		LIST_MODE = True
-	main(*args)

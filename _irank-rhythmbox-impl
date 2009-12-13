@@ -1,0 +1,51 @@
+#!/usr/bin/env python
+
+import irank
+from irank import editor
+from irank import rhythmbox
+import sys
+import os
+
+def edit_loop():
+	while True:
+		input = raw_input()
+		clear()
+		try:
+			editor.main(rhythmbox.current_file())
+			display_song(rhythmbox.current_file())
+		except ValueError: pass
+
+def clear():
+	os.system("clear")
+
+def display_song(current_song):
+	clear()
+	if not current_song: return
+	print (os.path.basename(current_song))
+	print
+	try:
+		print irank.Song(current_song).values
+	except StandardError, e:
+		print e
+
+def display_loop():
+	def on_song(path):
+		current_song = path
+		display_song(current_song)
+	rhythmbox.playing_songs(on_song)
+
+if __name__ == '__main__':
+	args = sys.argv[1:]
+	actions = {'edit': edit_loop,'display': display_loop}
+	if len(args) != 1 or args[0] not in actions:
+		print "Usage: %s [%s]" % (os.path.basename(sys.argv[0]), '|'.join(actions))
+		sys.exit(1)
+	try:
+		actions[args[0]]()
+		sys.exit(0)
+	except KeyboardInterrupt:
+		sys.exit(2)
+
+
+
+

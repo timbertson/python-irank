@@ -1,7 +1,6 @@
-#!/bin/sh
+#!/bin/bash
 
-selected_file="`nowplaying rhythmbox`"
-[ -z "$selected_file" ] && exit 1
+_irank-rhythmbox-impl display &
+_irank-rhythmbox-impl edit
 
-irank "$selected_file"
-
+kill %

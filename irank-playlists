@@ -1,0 +1,91 @@
+#!/usr/bin/env python
+
+import sqlite3
+import os
+import sys
+import shutil
+import optparse
+import yaml
+
+import irank
+
+VERBOSE = False
+
+def clear_dir(location):
+	for path, dirs, files in os.walk(location):
+		not_links = [os.path.join(path, file) for file in files if not os.path.islink(os.path.join(path, file))]
+		if len(not_links) > 0:
+			raise RuntimeError("The following files are not symbolic links: %s" % (
+				"\n".join(not_links),))
+	for content in os.listdir(location):
+		shutil.rmtree(os.path.join(location, content))
+
+def run(input_file, music_root, playlist_root):
+	if os.path.isdir(playlist_root):
+		clear_dir(playlist_root)
+	else:
+		os.mkdir(playlist_root)
+	playlist_defs = list(yaml.load_all(open(input_file)))[0]
+	print "Populating database.."
+	db = populate_db(music_root)
+	print '-' * 80
+	print
+	create_playlists(playlist_defs, db, playlist_root)
+
+def create_playlists(rules, db, dest_dir):
+	for name, condition in rules.items():
+		print "creating playlist: %s" % (name,)
+		output_folder = os.path.join(dest_dir, name)
+		os.mkdir(output_folder)
+		for filepath, in db.execute('select path from songs where %s' % (condition,)):
+			os.symlink(filepath, os.path.join(output_folder, os.path.basename(filepath)))
+
+def populate_db(music_root):
+	db = sqlite3.connect(':memory:')
+	db.execute("create table songs (path string, %s);" % (
+		", ".join(["%s number" % (key.lower().replace(' ','_'),) for key in irank.KEYS]),))
+	add_songs(music_root, db)
+	return db
+
+def add_songs(music_root, db):
+	for path, dirs, files in os.walk(music_root):
+		for file in files:
+			filepath = os.path.join(path, file)
+			try:
+				song = irank.Song(filepath)
+			except StandardError, e:
+				print >> sys.stderr, "error processing %s: %s" % (filepath, e)
+				import time
+				time.sleep(5)
+			sql = "insert into songs values (?, %s)" % (", ".join(["?" for k in irank.KEYS]),)
+			data = tuple([unicode(filepath, 'UTF-8')] + song.values.values())
+			db.execute(sql, data)
+
+def realpath(p):
+	return os.path.abspath(os.path.expanduser(p))
+
+def main():
+	global VERBOSE
+	parser = optparse.OptionParser()
+	parser.add_option('-i', '--input', help='input (music) directory')
+	parser.add_option('-o', '--output', help='output (playlist) directory')
+	parser.add_option('-c', '--config', help='config file (%default)', default='~/.irankrc')
+	parser.add_option('-v', '--verbose', action='store_true')
+	options, args = parser.parse_args()
+	VERBOSE = options.verbose
+
+	def usage():
+		raise ArgumentError(parser.help())
+	if not len(args) == 0: usage()
+	if not options.output: usage()
+	if not options.input: usage()
+	
+	run(*map(realpath, [options.config, options.input, options.output]))
+
+if __name__ == '__main__':
+	try:
+		main()
+	except Exception, e:
+		if VERBOSE: raise
+		print "ERROR: %s" % (e,)
+		sys.exit(2)
