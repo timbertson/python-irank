@@ -33,8 +33,8 @@ class Values(dict):
 		summary = []
 		for k in KEYS:
 			v = self[k]
-			stars = "%6s" % ("*" * v,)
-			summary.append(stars + " " + k)
+			line = "%15s %-6s" % (k, "*" * v)
+			summary.append(line)
 		return "\n".join(summary)
 	
 	def __setitem__(self, k, v):
