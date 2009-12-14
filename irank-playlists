@@ -34,11 +34,14 @@ def run(input_file, music_root, playlist_root):
 
 def create_playlists(rules, db, dest_dir):
 	for name, condition in rules.items():
-		print "creating playlist: %s" % (name,)
-		output_folder = os.path.join(dest_dir, name)
-		os.mkdir(output_folder)
-		for filepath, in db.execute('select path from songs where %s' % (condition,)):
-			os.symlink(filepath, os.path.join(output_folder, os.path.basename(filepath)))
+		create_playlist(name, condition, db, dest_dir)
+
+def create_playlist(name, condition, db, dest_dir):
+	print "creating playlist: %s" % (name,)
+	output_folder = os.path.join(dest_dir, name)
+	os.mkdir(output_folder)
+	for filepath, in db.execute('select path from songs where %s' % (condition,)):
+		os.symlink(filepath, os.path.join(output_folder, os.path.basename(filepath)))
 
 def populate_db(music_root):
 	db = sqlite3.connect(':memory:')
