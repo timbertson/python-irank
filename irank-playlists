@@ -10,13 +10,18 @@ import yaml
 import irank
 
 VERBOSE = False
+LINK_FN = os.link
 
-def clear_dir(location):
+def ensure_no_real_files_exist(location):
 	for path, dirs, files in os.walk(location):
 		not_links = [os.path.join(path, file) for file in files if not os.path.islink(os.path.join(path, file))]
 		if len(not_links) > 0:
 			raise RuntimeError("The following files are not symbolic links: %s" % (
 				"\n".join(not_links),))
+
+def clear_dir(location):
+	assert "irank" in location # hack to make me feel more secure that I won't be deleting my entire music library
+	#ensure_no_real_files_exist(location)
 	for content in os.listdir(location):
 		shutil.rmtree(os.path.join(location, content))
 
@@ -35,13 +40,14 @@ def run(input_file, music_root, playlist_root):
 def create_playlists(rules, db, dest_dir):
 	for name, condition in rules.items():
 		create_playlist(name, condition, db, dest_dir)
+	print "created %s playlists" % (len(rules),)
 
 def create_playlist(name, condition, db, dest_dir):
 	print "creating playlist: %s" % (name,)
 	output_folder = os.path.join(dest_dir, name)
 	os.mkdir(output_folder)
 	for filepath, in db.execute('select path from songs where %s' % (condition,)):
-		os.symlink(filepath, os.path.join(output_folder, os.path.basename(filepath)))
+		LINK_FN(filepath, os.path.join(output_folder, os.path.basename(filepath.encode('UTF-8'))))
 
 def populate_db(music_root):
 	db = sqlite3.connect(':memory:')
@@ -68,14 +74,16 @@ def realpath(p):
 	return os.path.abspath(os.path.expanduser(p))
 
 def main():
-	global VERBOSE
+	global VERBOSE, LINK_FN
 	parser = optparse.OptionParser()
 	parser.add_option('-i', '--input', help='input (music) directory')
 	parser.add_option('-o', '--output', help='output (playlist) directory')
 	parser.add_option('-c', '--config', help='config file (%default)', default='~/.irankrc')
 	parser.add_option('-v', '--verbose', action='store_true')
+	parser.add_option('-s', '--symlink', action='store_true')
 	options, args = parser.parse_args()
 	VERBOSE = options.verbose
+	LINK_FN = os.symlink if options.symlink else os.link
 
 	def usage():
 		raise ValueError(parser.format_help())
@@ -86,9 +94,4 @@ def main():
 	run(*map(realpath, [options.config, options.input, options.output]))
 
 if __name__ == '__main__':
-	try:
-		main()
-	except Exception, e:
-		if VERBOSE: raise
-		print "ERROR: %s" % (e,)
-		sys.exit(2)
+	main()
