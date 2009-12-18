@@ -33,9 +33,17 @@ class Values(dict):
 		summary = []
 		for k in KEYS:
 			v = self[k]
-			line = "%15s %-6s" % (k, "*" * v)
+			line = "%s %s" % self._format(k,v)
 			summary.append(line)
 		return "\n".join(summary)
+	
+	def _format(self, k, v):
+		key_str = "%15s" % (k,)
+		value_str = "%-6s" % ("*" * v, )
+		return key_str, value_str
+
+	def formatted_pairs(self):
+		return [self._format(k,v) for k,v in self.items()]
 	
 	def __setitem__(self, k, v):
 		if not k in KEYS:
@@ -53,6 +61,9 @@ class Values(dict):
 	
 	def keys(self):
 		return KEYS
+	
+	def __len__(self):
+		return len(KEYS)
 	
 	def values(self):
 		return map(self.__getitem__, KEYS)
