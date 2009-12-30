@@ -39,7 +39,7 @@ class Values(dict):
 	
 	def _format(self, k, v):
 		key_str = "%15s" % (k,)
-		value_str = "%-6s" % ("*" * v, )
+		value_str = "%-5s" % ("*" * v, )
 		return key_str, value_str
 
 	def formatted_pairs(self):

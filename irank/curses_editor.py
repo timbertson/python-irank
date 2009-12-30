@@ -139,5 +139,7 @@ class Editor(object):
 		self.song.values[rating_key] = rating
 
 def main(*args):
-	curses.wrapper(Editor(*args).main)
+	try:
+		curses.wrapper(Editor(*args).main)
+	except (EOFError, KeyboardInterrupt): pass
 
