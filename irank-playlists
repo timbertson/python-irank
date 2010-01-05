@@ -51,7 +51,7 @@ def create_playlist(name, condition, db, dest_dir):
 		try:
 			LINK_FN(filepath, os.path.join(output_folder, os.path.basename(filepath.encode('UTF-8'))))
 		except UnicodeEncodeError, e:
-			print "Error linking file: %s" % (filepath,)
+			print "Error linking file: %s" % (filepath.encode('ascii','ignore'),)
 			import traceback
 			traceback.print_exc()
 
