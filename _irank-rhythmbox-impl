@@ -6,17 +6,26 @@ import sys
 import os
 import subprocess
 
+def run_with_current_track(process_name):
+	subprocess.Popen([process_name, rhythmbox.current_file()]).communicate()
+
 def edit_loop():
 	while True:
+		input = None
 		try:
-			input = raw_input()
+			input = raw_input().strip()
 		except EOFError: break
-		clear()
-		try:
+		if input == 'd':
+			run_with_current_track('irank-delete')
+		elif input == 'k':
+			run_with_current_track('irank-keep')
+		elif not input:
+			clear()
 			# just running the function should work, but curses gets in a funny state sometimes...
-			subprocess.Popen(['irank-edit', rhythmbox.current_file()]).communicate()
-			display_song(rhythmbox.current_file())
-		except ValueError: pass
+			run_with_current_track('irank-edit')
+
+		clear()
+		display_song(rhythmbox.current_file())
 
 def clear():
 	os.system("clear")
