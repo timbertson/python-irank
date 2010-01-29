@@ -23,9 +23,7 @@ def edit_loop():
 			clear()
 			# just running the function should work, but curses gets in a funny state sometimes...
 			run_with_current_track('irank-edit')
-
-		clear()
-		display_song(rhythmbox.current_file())
+			display_song(rhythmbox.current_file())
 
 def clear():
 	os.system("clear")
