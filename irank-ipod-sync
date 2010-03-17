@@ -1,0 +1,138 @@
+#!/usr/bin/env python
+import os
+import subprocess
+import gpod
+import sys
+
+IGNORED_PLAYLISTS = (
+	"unrated",
+)
+
+def exclude(name):
+	return name.startswith("rating") or name in IGNORED_PLAYLISTS
+
+from collections import defaultdict
+def build_playlist_sets(playlist_root):
+	inclusions = defaultdict(lambda: [])
+	base_len = len(playlist_root)
+	for path, dirnames, filenames in os.walk(playlist_root):
+		for filename in filenames:
+			relative_path = os.path.join(path, filename)[base_len+1:]
+			playlist, relative_path = relative_path.split(os.path.sep, 1)
+			if exclude(playlist): break
+			inclusions[relative_path].append(playlist)
+	return inclusions
+
+def get_playlist(name, db):
+	"get playlist by name"
+	for playlist in db.Playlists:
+		if playlist.name == name:
+			return playlist
+	return None
+
+def clear_db(db):
+	master = db.get_master()
+	for track in master:
+		db.remove(track, quiet=True)
+	for playlist in db.Playlists:
+		if playlist.master: continue
+		db.remove(playlist, quiet=True)
+
+def create_playlists(names, db):
+	"ensure exactly the given set of names is the playlists in the db"
+	mappings = {}
+	for name in names:
+		playlist = get_playlist(name, db)
+		if playlist is None:
+			playlist = db.new_Playlist(title=name)
+		mappings[name] = playlist
+	return mappings
+
+def main(source_path, pod_path):
+	gpod.Database._load_gtkpod_extended_info = lambda *a: None # I am a very bad man
+	run_with_progress(lambda cb: do_sync(source_path, pod_path, cb))
+
+def do_sync(source_path, pod_path, progresss_cb):
+	db = gpod.Database(pod_path)
+	playlists = {}
+	for dir in os.listdir(source_path):
+		playlists[dir] = dir.replace("_"," ")
+
+	print "grabbing song<->playlist mappings"
+	song_mapping = build_playlist_sets(source_path)
+
+	total_songs = len(song_mapping.keys())
+	current_song = 0
+
+	print "clearing DB"
+	clear_db(db)
+
+	playlist_mapping = create_playlists(playlists.keys(), db)
+
+	print "Syncing items"
+	for song_path, folders in song_mapping.items():
+		current_song += 1
+		progresss_cb(total_songs, current_song, "Updating ... (%s of %s)" % (current_song, total_songs))
+		folders[0]
+		path = os.path.join(source_path, folders[0], song_path)
+		try:
+			t = db.new_Track(filename = path)
+			for playlist_key in folders:
+				playlist_mapping[playlist_key].add(t)
+		except TypeError,e :
+			print "ERROR: %s - %s :: %s" % (type(e).__name__, e, path)
+	
+	current_song = 0
+	_count = [0]
+	def file_copied(*a):
+		_count[0] += 1
+		current_song = _count[0]
+		progresss_cb(total_songs, current_song, "Copying files to the iPod ... (%s of %s)" % (current_song, total_songs))
+
+	db.copy_delayed_files(callback=file_copied)
+	db.close()
+
+def run_with_progress(payload):
+	null = open(os.devnull, 'w')
+	retcode = 0
+
+	progress_bar = subprocess.Popen(["zenity", "--progress", "--auto-close"], stdin=subprocess.PIPE, stdout = null)
+	def close_progress_bar():
+		if progress_bar.returncode is not None:
+			progress_bar.stdin.close()
+			progress_bar.terminate()
+			progress_bar.kill()
+	
+	def callback(total, current, title):
+		import time
+		#time.sleep(0.1)
+		if progress_bar.returncode is not None:
+			# progress bar got cancelled
+			raise KeyboardInterrupt()
+		percent = int((current * 100.0) / total)
+		progress_bar.stdin.write("%d\n" % (min(percent, 99),))
+		progress_bar.stdin.write("#%s\n" % (title,))
+		progress_bar.stdin.flush()
+
+	try:
+		payload(callback)
+		close_progress_bar()
+		print "ALL DONE"
+	except KeyboardInterrupt:
+		print "Cancelled"
+		retcode = 1
+	except IOError:
+		print "Cancelled"
+		retcode = 1
+	finally:
+		close_progress_bar()
+		null.close()
+
+	sys.exit(retcode)
+
+if __name__ == '__main__':
+	args = sys.argv[1:]
+	if len(args) != 2:
+		print "Usage: %s irank_base ipod_path" % (os.path.basename(sys.argv[0]),)
+		sys.exit(1)
+	main(*args)
