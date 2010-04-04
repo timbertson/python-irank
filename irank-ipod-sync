@@ -15,7 +15,36 @@ def exclude(name):
 	return name.startswith("rating") or name in IGNORED_PLAYLISTS
 
 
-def main(playlist_path, pod_path):
+def main():
+	import optparse
+	parser = optparse.OptionParser("Usage: %prog <playlists> <ipod>")
+	parser.add_option('--check', '-c', action='store_true')
+	opts, args = parser.parse_args()
+	playlist_path = pod_path = None
+	try:
+		playlist_path, pod_path = args
+	except StandardError, e:
+		parser.print_usage(file = sys.stderr)
+		sys.exit(1)
+	if opts.check:
+		return check(pod_path)
+	return sync(playlist_path, pod_path)
+
+def check(pod_path):
+	sync = Sync('', pod_path)
+	bad_tracks = sync.invalid_tracks()
+	if not bad_tracks:
+		print >> sys.stderr, "no orphan files!"
+		sys.exit(0)
+	else:
+		print >> sys.stderr, " == bad tracks: == "
+		for track in bad_tracks:
+			print "%s%s" % (pod_path, track['ipod_path'].replace(':','/'))
+			sync.db.remove(track)
+		sync.db.close()
+		sys.exit(1)
+
+def sync(playlist_path, pod_path):
 	gpod.Database._load_gtkpod_extended_info = lambda *a: None # I am a very bad man
 	run_with_progress(lambda cb: Sync(playlist_path, pod_path).run(cb))
 
@@ -36,6 +65,15 @@ class Sync(object):
 	def fingerprint(self, path):
 		with open(path, 'rb') as file:
 			return (sha1(file.read(1024 * 100)).hexdigest())
+	
+	def invalid_tracks(self):
+		invalids = set()
+		master = self.db.get_master()
+		for track in master:
+			path = track.ipod_filename()
+			if path is None:
+				invalids.add(track)
+		return invalids
 
 	def song_ids(self, paths, on_scan=None):
 		ids = {}
@@ -45,8 +83,8 @@ class Sync(object):
 				if id in ids:
 					raise RuntimeError("duplicate key %s for %s and %s" % (id, ids[id], path))
 				ids[id] = path
-			except IOError:
-				print "Skipping: %s" % (path,)
+			except IOError, e:
+				print "Skipping %s: %s" % (path, e)
 			if on_scan: on_scan()
 		return ids
 	
@@ -73,18 +111,20 @@ class Sync(object):
 		"remove all playlists in the ipod DB"
 		for playlist in self.db.Playlists:
 			if playlist.master: continue
-			#self.db.remove(playlist, quiet=True)
+			self.db.remove(playlist, quiet=True)
 	
 	def trim_existing_songs(self, current_song_paths, on_scan=None):
 		"remove all songs from the ipod that do not appear in any current playlist"
 		active_ids = self.song_ids(current_song_paths, on_scan)
 		new_songs = set(current_song_paths)
 		master = self.db.get_master()
+		num_already_present = 0
+		num_new = 0
 		for track in master:
 			path = track.ipod_filename()
 			if on_scan: on_scan()
 			if path is None:
-				print "no path for track %s" % (track,)
+				print "no path for %s" % (track,)
 				self.db.remove(track)
 				continue
 			else:
@@ -92,8 +132,11 @@ class Sync(object):
 			track_id = self.fingerprint(path)
 			try:
 				new_songs.remove(active_ids[track_id])
+				num_already_present += 1
 			except KeyError:
 				self.db.remove(track, quiet=True)
+				num_new += 1
+		print "after trimming songs, new = %s and already_present = %s" % (num_new, num_already_present)
 		return new_songs
 
 	def create_playlists(self, names):
@@ -136,7 +179,7 @@ class Sync(object):
 			progress.inc()
 			if progress.current % 10 == 0:
 				progress_cb(progress.total, progress.current, "Scanning ... (%s of %s)" % (progress.current, progress.total))
-		song_paths = (os.path.join(dirs[0], file) for file, dirs in song_mapping.items())
+		song_paths = set((os.path.join(dirs[0], file) for file, dirs in song_mapping.items()))
 		new_songs = self.trim_existing_songs(song_paths, on_song_scan)
 
 		print "getting playlist mapping"
@@ -213,8 +256,4 @@ def run_with_progress(payload):
 
 # main wrapper
 if __name__ == '__main__':
-	args = sys.argv[1:]
-	if len(args) != 2:
-		print "Usage: %s <playlists> <ipod>" % (os.path.basename(sys.argv[0]),)
-		sys.exit(1)
-	main(*args)
+	main()
