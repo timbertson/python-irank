@@ -17,7 +17,12 @@ def _path(uri):
 	return urllib2.unquote(path[2:]).encode('utf-8')
 
 def current_file():
-	return _path(rbplayer.getPlayingUri())
+	uri = rbplayer.getPlayingUri()
+	try:
+		return _path(uri)
+	except ValueError:
+		print "Invalid URI: %r" % (uri,)
+		raise
 
 def playing_songs(cb):
 	rbshellobj = bus.get_object('org.gnome.Rhythmbox', '/org/gnome/Rhythmbox/Shell')
