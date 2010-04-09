@@ -12,7 +12,6 @@ IGNORED_PLAYLISTS = (
 MASTER = '@master'
 
 def exclude(name):
-	return name not in ('new','car','new_good')
 	return name.startswith("rating") or name in IGNORED_PLAYLISTS
 
 
