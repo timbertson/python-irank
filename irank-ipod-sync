@@ -8,8 +8,13 @@ from collections import defaultdict
 
 IGNORED_PLAYLISTS = (
 	"unrated",
+	"sad",
+	"soft",
+	"angry",
+	"fun",
 )
 MASTER = '@master'
+FINGERPRINT_SIZE=100 # kbytes
 
 def exclude(name):
 	return name.startswith("rating") or name in IGNORED_PLAYLISTS
@@ -20,6 +25,7 @@ def main():
 	parser = optparse.OptionParser("Usage: %prog <playlists> <ipod>")
 	parser.add_option('--check', '-c', action='store_true')
 	parser.add_option('--dry-run', action='store_true')
+	parser.add_option('--stats', action='store_true')
 	opts, args = parser.parse_args()
 	playlist_path = pod_path = None
 	try:
@@ -29,6 +35,8 @@ def main():
 		sys.exit(1)
 	if opts.check:
 		return check(pod_path)
+	if opts.stats:
+		return Sync(playlist_path, pod_path, opts.dry_run).stats()
 	return sync(playlist_path, pod_path, opts.dry_run)
 
 def check(pod_path):
@@ -66,7 +74,7 @@ class Sync(object):
 
 	def fingerprint(self, path):
 		with open(path, 'rb') as file:
-			return (sha1(file.read(1024 * 100)).hexdigest())
+			return (sha1(file.read(1024 * FINGERPRINT_SIZE)).hexdigest())
 	
 	def invalid_tracks(self):
 		invalids = set()
@@ -97,6 +105,7 @@ class Sync(object):
 		for path, dirnames, filenames in os.walk(self.playlist_path):
 			for filename in filenames:
 				relative_path = os.path.join(path, filename)[base_len:]
+				relative_path = relative_path.lstrip(os.path.sep)
 				playlist, relative_path = relative_path.split(os.path.sep, 1)
 				if exclude(playlist): break
 				song_mappings[relative_path].append(playlist)
@@ -176,6 +185,10 @@ class Sync(object):
 					playlist_mapping[playlist_key].add(t)
 			except TypeError,e :
 				print "ERROR: %s - %s :: %s" % (type(e).__name__, e, path)
+
+	def stats(self):
+		for playlist in self.playlist_names():
+			print "%20s:  %s" % (playlist, len(os.listdir(os.path.join(self.playlist_path, playlist))))
 
 	def run(self, progress_cb):
 		"run the sync"
