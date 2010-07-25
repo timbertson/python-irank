@@ -14,7 +14,7 @@ IGNORED_PLAYLISTS = (
 	"fun",
 )
 MASTER = '@master'
-FINGERPRINT_SIZE=100 # kbytes
+FINGERPRINT_SIZE=250 # kbytes
 
 def exclude(name):
 	return name.startswith("rating") or name in IGNORED_PLAYLISTS
