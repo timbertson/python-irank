@@ -76,17 +76,17 @@ class Editor(object):
 				if ch == ascii.NL:
 					save()
 					break
-				elif ch == curses.KEY_UP:
+				elif ch == curses.KEY_UP or ch == ord('k'):
 					self.select(PREVIOUS)
-				elif ch == curses.KEY_DOWN:
+				elif ch == curses.KEY_DOWN or ch == ord('j'):
 					self.select(NEXT)
-				elif ch == curses.KEY_LEFT:
+				elif ch == curses.KEY_LEFT or ch == ord(' ') or ch == ord('h'):
 					self.add_rating(-1)
-				elif ch == curses.KEY_RIGHT:
+				elif ch == curses.KEY_RIGHT or ch == ord('l'):
 					self.add_rating(1)
-				elif ch == curses.KEY_HOME:
+				elif ch == curses.KEY_HOME or ch == ord('g'):
 					self.move_to(0)
-				elif ch == curses.KEY_END:
+				elif ch == curses.KEY_END or ch == ord('G'):
 					self.move_to(len(self.song.values)-1)
 				elif ch == ascii.ESC:
 					break
