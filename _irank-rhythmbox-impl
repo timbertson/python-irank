@@ -19,6 +19,8 @@ def edit_loop():
 			run_with_current_track('irank-delete')
 		elif input == 'k':
 			run_with_current_track('irank-keep')
+		elif input == 'a':
+			run_with_current_track('irank-discard')
 		elif not input:
 			clear()
 			# just running the function should work, but curses gets in a funny state sometimes...
