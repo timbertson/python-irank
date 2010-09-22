@@ -7,6 +7,7 @@ import sys
 import shutil
 import optparse
 import yaml
+import traceback
 
 import irank
 
@@ -49,10 +50,9 @@ def create_playlist(name, condition, db, dest_dir):
 	os.mkdir(output_folder)
 	for filepath, in db.execute('select path from songs where %s' % (condition,)):
 		try:
-			LINK_FN(filepath, os.path.join(output_folder, os.path.basename(filepath.encode('UTF-8'))))
-		except UnicodeEncodeError, e:
-			print "Error linking file: %s" % (filepath.encode('ascii','ignore'),)
-			import traceback
+			LINK_FN(filepath, os.path.join(output_folder, os.path.basename(filepath)))
+		except (UnicodeEncodeError, OSError), e:
+			print "Error linking file: %s" % (filepath.decode('ascii','replace'),)
 			traceback.print_exc()
 
 def populate_db(music_root):
