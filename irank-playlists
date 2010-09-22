@@ -87,7 +87,7 @@ def main():
 	parser = optparse.OptionParser()
 	parser.add_option('-i', '--input', help='input (music) directory')
 	parser.add_option('-o', '--output', help='output (playlist) directory')
-	parser.add_option('-c', '--config', help='config file (%default)', default='~/.irankrc')
+	parser.add_option('-c', '--config', help='config file (%default)', default='~/.config/irank/playlists')
 	parser.add_option('-v', '--verbose', action='store_true')
 	parser.add_option('-s', '--symlink', action='store_true')
 	options, args = parser.parse_args()
