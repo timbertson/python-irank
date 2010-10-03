@@ -1,0 +1,31 @@
+#!/usr/bin/env python
+
+import sqlite3
+import logging
+import sys
+
+from irank import Song
+
+logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
+
+def load_db(path):
+	db = sqlite3.connect(path)
+	for diff in db.execute("select path, key, old_val, new_val, number from diffs order by order asc;"):
+		logging.debug("fetched row: " + repr(diff))
+		path, key, old, new, _ = diff
+		try:
+			song = Song(path)
+			assert song.values[key] == old
+			if raw_input("about to set %s=%s for %s (was %s). Press enter for OK" % (key, new, path, old)) != '':
+				print "skipping..."
+				continue
+			logging.info("setting %s=%s for %s" % (key, val, path))
+			song.values[key] = new
+			song.save()
+		except Exception, e:
+			logging.error(
+			print >> sys.stderr, "Error processing update: %s" % (e,)
+	if raw_input("good to remove this stuff now?") != '': return
+	logging.info("removing all diff columns")
+	db.execute("delete from diffs;")
+	db.commit()
