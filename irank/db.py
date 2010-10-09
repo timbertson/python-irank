@@ -37,7 +37,7 @@ def add_songs(music_root, db):
 	db.commit()
 
 def add_diff_metadata(db):
-	db.execute("CREATE TABLE diffs (index INTEGER PRIMARY KEY AUTOINCREMENT, path STRING, key STRING, old_val NUMBER, new_val NUMBER);")
+	db.execute("CREATE TABLE diffs (id INTEGER PRIMARY KEY AUTOINCREMENT, path STRING, key STRING, old_val NUMBER, new_val NUMBER);")
 	db.commit()
 
 if __name__ == '__main__':

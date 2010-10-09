@@ -26,7 +26,11 @@ def clear_dir(location):
 	assert "irank" in location # hack to make me feel more secure that I won't be deleting my entire music library
 	#ensure_no_real_files_exist(location)
 	for content in os.listdir(location):
-		shutil.rmtree(os.path.join(location, content))
+		full_path = os.path.join(location, content)
+		try:
+			os.remove(full_path)
+		except OSError:
+			shutil.rmtree(full_path)
 
 def run(input_file, music_root, playlist_root):
 	if os.path.isdir(playlist_root):

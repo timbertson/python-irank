@@ -5,6 +5,8 @@ LS_FLAG = '-l'
 
 if __name__ == '__main__':
 	args = sys.argv[1:]
+	if '--help' in args:
+		sys.exit(1)
 	if LS_FLAG in args:
 		from irank import curses_editor as editor
 		args.remove(LS_FLAG)

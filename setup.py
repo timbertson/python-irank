@@ -13,8 +13,8 @@ setup(
 		'_irank-rhythmbox-impl',
 		'irank-rhythmbox',
 		'nowplaying-rhythmbox',
+		'irank-rating-sync'
 		'irank-playlists',
-		'irank-ipod-sync',
 	],
 	zip_safe=True,
 	install_requires=[

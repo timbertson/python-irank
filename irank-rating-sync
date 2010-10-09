@@ -3,29 +3,64 @@
 import sqlite3
 import logging
 import sys
+import os
+import optparse
 
 from irank import Song
 
-logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
+opts = None
 
 def load_db(path):
 	db = sqlite3.connect(path)
-	for diff in db.execute("select path, key, old_val, new_val, number from diffs order by order asc;"):
-		logging.debug("fetched row: " + repr(diff))
-		path, key, old, new, _ = diff
-		try:
-			song = Song(path)
-			assert song.values[key] == old
-			if raw_input("about to set %s=%s for %s (was %s). Press enter for OK" % (key, new, path, old)) != '':
-				print "skipping..."
-				continue
-			logging.info("setting %s=%s for %s" % (key, val, path))
-			song.values[key] = new
-			song.save()
-		except Exception, e:
-			logging.error(
-			print >> sys.stderr, "Error processing update: %s" % (e,)
-	if raw_input("good to remove this stuff now?") != '': return
-	logging.info("removing all diff columns")
-	db.execute("delete from diffs;")
-	db.commit()
+	errors = 0
+	try:
+		for diff in db.execute("select path, key, old_val, new_val, id from diffs order by id asc;"):
+			logging.debug("fetched row: " + repr(diff))
+			path, key, old, new, id = diff
+			filename = os.path.basename(path)
+			try:
+				song = Song(path.encode("UTF-8"))
+				assert song.values[key] == old, "expected existing value to be %s, but it was %s!" % (old, song.values[key])
+				logging.info("setting %s=%s for %s (was %s)" % (key, new, filename, old))
+				song.values[key] = new
+				song.save()
+				db.execute("delete from diffs where id = ?", (id,))
+			except StandardError, e:
+				errors += 1
+				print >> sys.stderr, "Error processing update to %s:\n    %s" % ( filename, e,)
+		if(errors > 0):
+			print "-------------------"
+			if !opts.no:
+				if opts.yes or (raw_input("Errors occurred. delete everything anyway? ").lower() in ('','y','yes')):
+					logging.info("removing all diff entries")
+					db.execute("delete from diffs;")
+					return 0
+			return 1
+	finally:
+		db.commit()
+
+def main():
+	global opts
+	p = optparse.OptionParser("""usage: %prog [options] /path/to/irank.sqlite
+
+%prog reads in a modified irank.sqlite file (as created by the android app, for example)
+and attempts to apply all new ratings to the original tracks""")
+	p.add_option('-y', '--yes', help="answer yes to all questions", default=False, action='store_true')
+	p.add_option('-n', '--no', help="answer no to all questions", default=False, action='store_true')
+	p.add_option('-v', '--verbose', default='false', action='store_true')
+	opts, args = p.parse_args()
+
+	level = logging.INFO
+	if opts.verbose:
+		level = logging.DEBUG
+	logging.basicConfig(stream=sys.stderr, level=level, format="%(message)s")
+	if len(args) != 1:
+		p.print_usage()
+		sys.exit(1)
+	sys.exit(load_db(*args))
+
+if __name__=='__main__':
+	try:
+		main()
+	except (KeyboardInterrupt, EOFError):
+		sys.exit(1)
