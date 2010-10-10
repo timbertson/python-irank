@@ -12,7 +12,7 @@ def populate_db(music_root, db_path = None):
 			os.remove(db_path)
 		except OSError: pass
 	db = sqlite3.connect(db_path or ':memory:')
-	db.execute("create table songs (path string, created_at , updated_at, %s);" % (
+	db.execute("create table songs (path string, artist string, title string, created_at , updated_at, %s);" % (
 		", ".join(["%s number" % (key.lower().replace(' ','_'),) for key in irank.KEYS]),))
 	add_songs(music_root, db)
 	add_diff_metadata(db)
@@ -28,11 +28,12 @@ def add_songs(music_root, db):
 				print >> sys.stderr, "error processing %s: %s" % (filepath, e)
 				import time
 				time.sleep(5)
-			sql = "insert into songs values (?, ?, ?, %s)" % (", ".join(["?" for k in irank.KEYS]),)
+				continue
+			sql = "insert into songs values (?, ?, ?, ?, ?, %s)" % (", ".join(["?" for k in irank.KEYS]),)
 			filestat = os.stat(filepath)
 			ctime = filestat[stat.ST_CTIME]
 			mtime = filestat[stat.ST_MTIME]
-			data = tuple([unicode(filepath, 'UTF-8'), ctime, mtime] + song.values.values())
+			data = tuple([unicode(filepath, 'UTF-8'), song.artist, song.title, ctime, mtime] + song.values.values())
 			db.execute(sql, data)
 	db.commit()
 

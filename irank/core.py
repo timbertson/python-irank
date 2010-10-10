@@ -2,7 +2,16 @@ import re
 
 irank_marker = re.compile("\\[([^]=]+)=([0-5])\\]")
 
-KEYS = ['rating', 'Mood', 'Pop', 'Softness', 'Hardcore', 'Nostalgia']
+import os, sys
+KEYS = ['rating', 'Mood', 'Softness', 'Nostalgia']
+try:
+	with open(os.path.expanduser("~/.config/irank/ratings")) as f:
+		strip = lambda x: x.strip()
+		identity = lambda x: x
+		KEYS = filter(identity, map(strip, f.readlines()))
+except StandardError:
+	print >> sys.stderr, ("Using the default rating keys.\n" +
+			"You can make your own by writing them one line at a time to ~/.config/irank/ratings")
 
 class Song(object):
 	def __init__(self, path):
@@ -12,12 +21,13 @@ class Song(object):
 		except ValueError, e:
 			raise ValueError("file %s: %s" % (path, e))
 		self.tags = self.file.tag()
+		self.artist = self.tags.artist
+		self.title = self.tags.title
 		self.values = Values(self.tags.comment)
 	
 	def save(self):
 		self.tags.comment = self.values.flatten()
 		self.file.save()
-	
 
 class Values(dict):
 	def __init__(self, str=''):
