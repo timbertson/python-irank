@@ -35,7 +35,8 @@ def clear_dir(location):
 
 def run(input_file, music_root, playlist_root):
 	if os.path.isdir(playlist_root):
-		clear_dir(playlist_root)
+		if not DB_ONLY:
+			clear_dir(playlist_root)
 	else:
 		os.mkdir(playlist_root)
 	playlist_defs = list(yaml.load_all(open(input_file)))[0]

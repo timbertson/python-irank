@@ -1,0 +1,19 @@
+#!/usr/bin/env python
+import os, sys
+
+def main(base, name, *directories):
+	if not directories: directories = (name,)
+	fullpath = os.path.join(base, name + ".m3u")
+	dirpaths = [os.path.join(base, d) for d in directories]
+	with open(fullpath, 'w') as f:
+		for dirpath in dirpaths:
+			for filename in os.listdir(dirpath):
+				if not os.path.isdir(os.path.join(dirpath, filename)):
+					print >> f, filename
+
+if __name__ == '__main__':
+	try:
+		main(*sys.argv[1:])
+	except TypeError:
+		usage = "Usage: %(prog)s basedir playlist-name [directoryname [directoryname ...]]"
+		print >> sys.stderr, usage % dict(prog=os.path.basename(sys.argv[0]))
