@@ -1,4 +1,5 @@
 import re
+import db
 
 irank_marker = re.compile("\\[([^]=]+)=([0-5])\\]")
 
@@ -32,9 +33,9 @@ class Song(object):
 class Values(dict):
 	def __init__(self, str=''):
 		if str:
-			self._parse(str)
+			self.__parse(str)
 
-	def _parse(self, comment):
+	def __parse(self, comment):
 		for match in irank_marker.finditer(comment):
 			key, value = match.groups()
 			self[key] = int(value)
@@ -43,26 +44,33 @@ class Values(dict):
 		summary = []
 		for k in KEYS:
 			v = self[k]
-			line = "%s %s" % self._format(k,v)
+			line = "%s %s" % self.__format(k,v)
 			summary.append(line)
 		return "\n".join(summary)
 	
-	def _format(self, k, v):
+	def __format(self, k, v):
 		key_str = "%15s" % (k,)
 		value_str = "%-5s" % ("*" * v, )
 		return key_str, value_str
 
 	def formatted_pairs(self):
-		return [self._format(k,v) for k,v in self.items()]
-	
+		return [self.__format(k,v) for k,v in self.items()]
+
+	def __get_real_key(self, key):
+		if key in KEYS:
+			return key
+
+		for real_key, sanitised_key in zip(KEYS, map(db.sanitise_column_name, KEYS)):
+			if key == sanitised_key:
+				return real_key
+		raise KeyError(key)
+
 	def __setitem__(self, k, v):
-		if not k in KEYS:
-			raise KeyError(k)
+		k = self.__get_real_key(k)
 		super(type(self), self).__setitem__(k,v)
 	
 	def __getitem__(self, k):
-		if not k in KEYS:
-			raise KeyError(k)
+		k = self.__get_real_key(k)
 		return self.get(k,0)
 	
 	def items(self):

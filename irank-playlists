@@ -14,6 +14,7 @@ from irank.db import populate_db
 
 VERBOSE = False
 LINK_FN = os.link
+DB_ONLY = False
 
 def ensure_no_real_files_exist(location):
 	for path, dirs, files in os.walk(location):
@@ -40,6 +41,8 @@ def run(input_file, music_root, playlist_root):
 	playlist_defs = list(yaml.load_all(open(input_file)))[0]
 	print "Populating database.."
 	db = populate_db(music_root, db_path = os.path.join(playlist_root, "irank.sqlite"))
+	if(DB_ONLY):
+		return
 	print '-' * 80
 	print
 	create_playlists(playlist_defs, db, playlist_root)
@@ -64,16 +67,18 @@ def realpath(p):
 	return os.path.abspath(os.path.expanduser(p))
 
 def main():
-	global VERBOSE, LINK_FN
+	global VERBOSE, LINK_FN, DB_ONLY
 	parser = optparse.OptionParser()
 	parser.add_option('-i', '--input', help='input (music) directory')
 	parser.add_option('-o', '--output', help='output (playlist) directory')
 	parser.add_option('-c', '--config', help='config file (%default)', default='~/.config/irank/playlists')
 	parser.add_option('-v', '--verbose', action='store_true')
 	parser.add_option('-s', '--symlink', action='store_true')
+	parser.add_option('--db-only', action='store_true', default=False, help='generate db only - no playlists')
 	options, args = parser.parse_args()
 	VERBOSE = options.verbose
 	LINK_FN = os.symlink if options.symlink else os.link
+	DB_ONLY = options.db_only
 
 	def usage():
 		raise ValueError(parser.format_help())

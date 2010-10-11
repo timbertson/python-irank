@@ -3,6 +3,10 @@ import sqlite3
 import irank
 import stat
 import sys
+import re
+
+def sanitise_column_name(s):
+	return re.sub('[^a-zA-Z]', '_', s)
 
 def populate_db(music_root, db_path = None):
 	if db_path is not None:
@@ -12,8 +16,10 @@ def populate_db(music_root, db_path = None):
 			os.remove(db_path)
 		except OSError: pass
 	db = sqlite3.connect(db_path or ':memory:')
+
+	key_cols = map(sanitise_column_name, irank.KEYS)
 	db.execute("create table songs (path string, artist string, title string, created_at , updated_at, %s);" % (
-		", ".join(["%s number" % (key.lower().replace(' ','_'),) for key in irank.KEYS]),))
+		", ".join(["%s number" % (column,) for column in key_cols]),))
 	add_songs(music_root, db)
 	add_diff_metadata(db)
 	return db
