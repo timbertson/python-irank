@@ -20,13 +20,14 @@ def load_db(path):
 			filename = os.path.basename(path)
 			try:
 				song = Song(path.encode("UTF-8"))
-				logging.info("updating %s [%s: %s -> %s]" % (filename, key, new, filename, old))
+				logging.info("updating %s [%s: %s -> %s]" % (filename, key, old, new))
 				assert song.values[key] == old, "expected existing value (%s) to be %s, but it was %s!" % (key, old, song.values[key])
 				if raw_input('continue? ') != 'ok': return
 				song.values[key] = new
 				song.save()
 				db.execute("delete from diffs where id = ?", (id,))
 			except StandardError, e:
+				if opts.verbose: raise
 				errors += 1
 				print >> sys.stderr, "Error processing update to %s:\n    %s: %s" % ( filename, type(e).__name__, e,)
 		if(errors > 0):
