@@ -18,10 +18,15 @@ def populate_db(music_root, db_path = None):
 	db = sqlite3.connect(db_path or ':memory:')
 
 	key_cols = map(sanitise_column_name, irank.KEYS)
-	db.execute("create table songs (path string, artist string, title string, created_at , updated_at, %s);" % (
-		", ".join(["%s number" % (column,) for column in key_cols]),))
+	songs_definition = "create table songs (path string PRIMARY KEY, artist string, title string, created_at , updated_at, %s);"
+	updates_definition = "create table updates (path string PRIMARY KEY, %s);"
+
+	custom_columns = ", ".join(["%s number" % (column,) for column in key_cols])
+
+	for definition in (songs_definition, updates_definition):
+		db.execute(definition % (custom_columns,))
+
 	add_songs(music_root, db)
-	add_diff_metadata(db)
 	return db
 
 def add_songs(music_root, db):
@@ -41,10 +46,6 @@ def add_songs(music_root, db):
 			mtime = filestat[stat.ST_MTIME]
 			data = tuple([unicode(filepath, 'UTF-8'), song.artist, song.title, ctime, mtime] + song.values.values())
 			db.execute(sql, data)
-	db.commit()
-
-def add_diff_metadata(db):
-	db.execute("CREATE TABLE diffs (id INTEGER PRIMARY KEY AUTOINCREMENT, path STRING, key STRING, old_val NUMBER, new_val NUMBER);")
 	db.commit()
 
 if __name__ == '__main__':

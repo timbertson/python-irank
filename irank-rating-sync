@@ -5,6 +5,7 @@ import logging
 import sys
 import os
 import optparse
+import irank
 
 from irank import Song
 
@@ -13,19 +14,33 @@ opts = None
 def load_db(path):
 	db = sqlite3.connect(path)
 	errors = 0
+	column_names = map(irank.db.sanitise_column_name, irank.KEYS)
+	keys = ", ".join(column_names)
 	try:
-		for diff in db.execute("select path, key, old_val, new_val, id from diffs order by id asc;"):
-			logging.debug("fetched row: " + repr(diff))
-			path, key, old, new, id = diff
+		conditions = ["s.%s = p.%s" % (col, col) for col in column_names]
+		conditions = " and ".join(conditions)
+		print conditions
+		return 1
+		db.execute("delete from updates where path in (select path from songs s, paths p where " + conditions + ";")
+	finally:
+		db.commit()
+	try:
+		for update in db.execute("select path, " + keys + " from updates;"):
+			logging.debug("fetched row: " + repr(update))
+			path = diff[0]
+			new_values = diff[1:]
+
 			filename = os.path.basename(path)
 			try:
 				song = Song(path.encode("UTF-8"))
-				logging.info("updating %s [%s: %s -> %s]" % (filename, key, old, new))
-				assert song.values[key] == old, "expected existing value (%s) to be %s, but it was %s!" % (key, old, song.values[key])
-				if raw_input('continue? ') != 'ok': return
-				song.values[key] = new
-				song.save()
-				db.execute("delete from diffs where id = ?", (id,))
+
+				for key, value in zip(irank.KEYS, new_values):
+					old = song.values[key]
+					logging.info("updating %s [%s: %s -> %s]" % (filename, key, old, new))
+					if raw_input('continue? ') != 'ok': return
+					song.values[key] = new
+					song.save()
+				db.execute("delete from updates where path = ?", (path,))
 			except StandardError, e:
 				if opts.verbose: raise
 				errors += 1
@@ -35,7 +50,7 @@ def load_db(path):
 			if not opts.no:
 				if opts.yes or (raw_input("Errors occurred. delete everything anyway? [y/N] ").lower() in ('','y','yes')):
 					logging.info("removing all diff entries")
-					db.execute("delete from diffs;")
+					db.execute("delete from updates;")
 					return 0
 			return 1
 	finally:
