@@ -13,7 +13,7 @@ setup(
 		'_irank-rhythmbox-impl',
 		'irank-rhythmbox',
 		'nowplaying-rhythmbox',
-		'irank-rating-sync'
+		'irank-rating-sync',
 		'irank-playlists',
 	],
 	zip_safe=True,

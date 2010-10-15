@@ -8,6 +8,7 @@ import optparse
 import irank
 
 from irank import Song
+from irank.config import IrankOptionParser
 
 opts = None
 
@@ -17,18 +18,17 @@ def load_db(path):
 	column_names = map(irank.db.sanitise_column_name, irank.KEYS)
 	keys = ", ".join(column_names)
 	try:
-		conditions = ["s.%s = p.%s" % (col, col) for col in column_names]
+		conditions = ["s.%s = u.%s" % (col, col) for col in column_names]
 		conditions = " and ".join(conditions)
-		print conditions
-		return 1
-		db.execute("delete from updates where path in (select path from songs s, paths p where " + conditions + ";")
+		if opts.verbose: print conditions
+		db.execute("delete from updates where path in (select s.path from songs s, updates u where s.path = u.path and " + conditions + " )")
 	finally:
 		db.commit()
 	try:
 		for update in db.execute("select path, " + keys + " from updates;"):
 			logging.debug("fetched row: " + repr(update))
-			path = diff[0]
-			new_values = diff[1:]
+			path = update[0]
+			new_values = update[1:]
 
 			filename = os.path.basename(path)
 			try:
@@ -36,9 +36,9 @@ def load_db(path):
 
 				for key, value in zip(irank.KEYS, new_values):
 					old = song.values[key]
-					logging.info("updating %s [%s: %s -> %s]" % (filename, key, old, new))
-					if raw_input('continue? ') != 'ok': return
-					song.values[key] = new
+					if old == value: continue
+					logging.info("updating %s [%s: %s -> %s]" % (filename, key, old, value))
+					song.values[key] = value
 					song.save()
 				db.execute("delete from updates where path = ?", (path,))
 			except StandardError, e:
@@ -58,19 +58,21 @@ def load_db(path):
 
 def main():
 	global opts
-	p = optparse.OptionParser("""usage: %prog [options] /path/to/irank.sqlite
+	p = IrankOptionParser("""usage: %prog [options] /path/to/irank.sqlite
 
-%prog reads in a modified irank.sqlite file (as created by the android app, for example)
-and attempts to apply all new ratings to the original tracks""")
+%prog reads in a modified irank.sqlite file
+(as created by the android app, for example) and
+attempts to apply all new ratings to the original tracks""")
 	p.add_option('-y', '--yes', help="answer yes to all questions", default=False, action='store_true')
 	p.add_option('-n', '--no', help="answer no to all questions", default=False, action='store_true')
-	p.add_option('-v', '--verbose', default=False, action='store_true')
 	opts, args = p.parse_args()
 
 	level = logging.INFO
 	if opts.verbose:
 		level = logging.DEBUG
 	logging.basicConfig(stream=sys.stderr, level=level, format="%(message)s")
+	if len(args) == 0 and opts.android is not None:
+		args = (os.path.join(opts.android, "irank.sqlite"),)
 	if len(args) != 1:
 		p.print_usage()
 		sys.exit(1)

@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 import os, sys
+from irank.config import IrankOptionParser
 
 def main(base, name, *directories):
+	assert base is not None, "please supply a base directory!"
 	if not directories: directories = (name,)
 	fullpath = os.path.join(base, name + ".m3u")
 	dirpaths = [os.path.join(base, d) for d in directories]
@@ -11,9 +13,18 @@ def main(base, name, *directories):
 				if not os.path.isdir(os.path.join(dirpath, filename)):
 					print >> f, filename
 
-if __name__ == '__main__':
+def run():
+	usage = """Usage: %prog [OPTIONS] playlist-name [directoryname [directoryname ...]]
+
+playlist will be created in the `base` directory (specified via options, falling back to the configured android path)"""
+	p = IrankOptionParser()
+	p.add_option("--base", help="base directory to create playlist in", default=None)
+	opts, args = p.parse_args()
 	try:
-		main(*sys.argv[1:])
+		main(opts.base or opts.android, *args)
 	except TypeError:
-		usage = "Usage: %(prog)s basedir playlist-name [directoryname [directoryname ...]]"
-		print >> sys.stderr, usage % dict(prog=os.path.basename(sys.argv[0]))
+		p.print_help()
+		return 1
+
+if __name__ == '__main__':
+	sys.exit(run())

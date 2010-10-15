@@ -10,6 +10,7 @@ import yaml
 import traceback
 
 import irank
+from irank.config import config_file, realpath, IrankOptionParser
 from irank.db import populate_db
 
 VERBOSE = False
@@ -64,16 +65,10 @@ def create_playlist(name, condition, db, dest_dir):
 			print "Error linking file: %s" % (filepath.decode('ascii','replace'),)
 			traceback.print_exc()
 
-def realpath(p):
-	return os.path.abspath(os.path.expanduser(p))
-
 def main():
 	global VERBOSE, LINK_FN, DB_ONLY
-	parser = optparse.OptionParser()
-	parser.add_option('-i', '--input', help='input (music) directory')
-	parser.add_option('-o', '--output', help='output (playlist) directory')
-	parser.add_option('-c', '--config', help='config file (%default)', default='~/.config/irank/playlists')
-	parser.add_option('-v', '--verbose', action='store_true')
+	parser = IrankOptionParser()
+	parser.add_option('-c', '--config', help='config file (%default)', default=config_file('playlists'))
 	parser.add_option('-s', '--symlink', action='store_true')
 	parser.add_option('--db-only', action='store_true', default=False, help='generate db only - no playlists')
 	options, args = parser.parse_args()
@@ -87,7 +82,7 @@ def main():
 	if not options.output: usage()
 	if not options.input: usage()
 	
-	run(*map(realpath, [options.config, options.input, options.output]))
+	run(*map(realpath, [options.config, options.music, options.irank]))
 
 if __name__ == '__main__':
 	main()
