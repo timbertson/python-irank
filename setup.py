@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
+#NOTE: this file is deprecated - you should use the 0install feed (irank.xml)
+
 from setuptools import *
 setup(
 	name='irank',
-	version='0.1.2',
+	version='0.1.3',
 	author_email='tim3d.junk+irank@gmail.com',
 	author='Tim Cuthbertson',
 	description="music ranking metadata manager",
