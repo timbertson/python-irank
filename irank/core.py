@@ -51,7 +51,6 @@ class Values(dict):
 	def __format(self, k, v, key_width=None):
 		if key_width is None:
 			key_width = max(map(len, KEYS)) + 1
-			print repr(key_width)
 		key_str = "%%%ss" % (key_width,) % (k,)
 		value_str = "%-5s" % ("*" * v, )
 		return key_str, value_str

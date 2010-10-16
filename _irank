@@ -1,0 +1,14 @@
+#!/bin/bash
+
+base="$(dirname "$0")"
+if [ "$#" -lt 1 ]; then
+	echo "Commands:" 1>&2
+	echo '  (run `irank command --help` for specific help)' 1>&2
+	ls -1 "$base" | grep '^irank-' | sed -e 's/^irank-/  irank /' 1>&2
+	exit 1
+fi
+
+export PATH="$base:$PATH"
+cmd="irank-$1"
+shift
+exec "$base/$cmd" "$@"

@@ -1,0 +1,74 @@
+<?xml version="1.0" ?>
+<?xml-stylesheet type='text/xsl' href='interface.xsl'?>
+<interface uri="http://gfxmonk.net/dist/0install/irank.xml" xmlns="http://zero-install.sourceforge.net/2004/injector/interface">
+	<name>irank</name>
+	<summary>music rating tools</summary>
+	<publish mode="featured" xmlns="http://gfxmonk.net/dist/0install"/>
+  <homepage>http://github.com/gfxmonk/python-irank</homepage>
+	<description><![CDATA[
+A collection of tools for managing music ratings.
+
+Here's a brief description of the most common commands:
+(assuming you have run `0alias irank http://gfxmonk.net/dist/0install/irank.xml`)
+-----
+irank edit <filename>:   Edit the ratings assigned to a file.
+
+irank rhythmbox:         Monitor rhytmbox for changes, and allow editing of
+                         the current track.
+
+irank playlists:         Generate playlist folders in the configured "irank" directory,
+                         where each playlist is a folder of that name containing symlinks
+                         to the real location of all matched tracks (these are all the
+                         files within the configured "music" directory).
+
+irank rating-sync:       Used with the android app, to apply modified ratings
+                         to the original files.
+
+
+
+Various configuration files are used to tell irank what
+music to index and where to put its results, here's an
+example of mine:
+
+
+~/.config/irank/paths: (where to find things, in yaml key/value format)
+-----
+music: ~/Music/Library
+irank: ~/Music/irank
+android: /media/DESIRE/MP3
+
+
+~/.config/irank/ratings: (a list of the crieria you want to use to rate songs)
+-----
+rating
+Mood
+Pop
+Softness
+Hardcore
+Nostalgia
+
+
+~/.config/irank/playlists (yaml file, where the values are in the form of sqlite conditions)
+-----
+angry: rating>2 and Mood<3 and Hardcore>0 and Pop<3
+car: rating>2 and Pop>2 and Hardcore<2 and Mood>3
+fun: rating>2 and Mood>3 and Hardcore<3 and Softness<4
+soft: rating>1 and Softness>2 and Mood>2 and Pop<5
+new: datetime(updated_at, 'unixepoch') > datetime('NOW', 'localtime', '-4 months') and rating > 0
+new_good: datetime(updated_at, 'unixepoch') > datetime('NOW', 'localtime', '-4 months') and rating > 3
+
+
+
+Metadata is stored inside the comment field of the file, in the form "[key=value]". I
+have changed operating systems and music players a handful of times since origininally
+writing irank, and this is the best way to keep them portable that I know of.
+]]>
+	</description>
+
+	<group main="_irank">
+		<implementation id="sha1new=f55a320eba10594dce9f509abbd01faa80324be8" released="2010-10-16" version="0.1.2">
+    <manifest-digest sha256="79528b57a07257ca837a82ef4bfdb9e93bae34accec6f24b190eec5f71f6aa13"/>
+    <archive href="http://gfxmonk.net/dist/0install/irank/irank-0.1.2.tgz" size="27100"/>
+  </implementation>
+	</group>
+</interface>
