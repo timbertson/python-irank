@@ -1,0 +1,13 @@
+<?xml version="1.0" ?>
+<?xml-stylesheet type='text/xsl' href='interface.xsl'?>
+<interface uri="http://gfxmonk.net/dist/0install/tagpy.xml" xmlns="http://zero-install.sourceforge.net/2004/injector/interface">
+	<name>tagpy</name>
+	<summary>python-tagpy distro package</summary>
+	<description>
+	</description>
+	<homepage>http://pypi.python.org/pypi/tagpy</homepage>
+	<publish mode="ignore" xmlns="http://gfxmonk.net/dist/0install"/>
+	<group>
+		<package-implementation package="python-tagpy"/>
+	</group>
+</interface>

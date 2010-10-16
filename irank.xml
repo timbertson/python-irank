@@ -66,6 +66,9 @@ writing irank, and this is the best way to keep them portable that I know of.
 	</description>
 
 	<group main="_irank">
+		<requires interface="http://gfxmonk.net/dist/0install/tagpy.xml">
+		</requires>
+
 		<implementation id="sha1new=f55a320eba10594dce9f509abbd01faa80324be8" released="2010-10-16" version="0.1.2">
     <manifest-digest sha256="79528b57a07257ca837a82ef4bfdb9e93bae34accec6f24b190eec5f71f6aa13"/>
     <archive href="http://gfxmonk.net/dist/0install/irank/irank-0.1.2.tgz" size="27100"/>
