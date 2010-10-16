@@ -1,0 +1,9 @@
+#!/usr/bin/env python
+
+import os, sys
+import irank
+
+for f in sys.argv[1:]:
+	song = irank.Song(f)
+	name = os.path.splitext(os.path.basename(f))[0]
+	print "%-60s  |%s" % (name[:55], song.values.format_line())

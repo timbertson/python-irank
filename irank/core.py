@@ -48,13 +48,19 @@ class Values(dict):
 			summary.append(line)
 		return "\n".join(summary)
 	
-	def __format(self, k, v):
-		key_str = "%15s" % (k,)
+	def __format(self, k, v, key_width=None):
+		if key_width is None:
+			key_width = max(map(len, KEYS)) + 1
+			print repr(key_width)
+		key_str = "%%%ss" % (key_width,) % (k,)
 		value_str = "%-5s" % ("*" * v, )
 		return key_str, value_str
 
-	def formatted_pairs(self):
-		return [self.__format(k,v) for k,v in self.items()]
+	def formatted_pairs(self, key_width=None):
+		return [self.__format(k,v, key_width) for k,v in self.items()]
+	
+	def format_line(self, key_width = 1):
+		return "   ".join(":".join(pair) for pair in self.formatted_pairs(key_width))
 
 	def __get_real_key(self, key):
 		if key in KEYS:

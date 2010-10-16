@@ -15,6 +15,7 @@ setup(
 		'nowplaying-rhythmbox',
 		'irank-rating-sync',
 		'irank-playlists',
+		'irank-ls',
 	],
 	zip_safe=True,
 	install_requires=[
