@@ -79,8 +79,8 @@ def main():
 	def usage():
 		raise ValueError(parser.format_help())
 	if not len(args) == 0: usage()
-	if not options.output: usage()
-	if not options.input: usage()
+	if not options.irank: usage()
+	if not options.music: usage()
 	
 	run(*map(realpath, [options.config, options.music, options.irank]))
 
