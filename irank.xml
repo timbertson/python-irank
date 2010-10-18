@@ -4,7 +4,7 @@
 	<name>irank</name>
 	<summary>music rating tools</summary>
 	<publish mode="featured" xmlns="http://gfxmonk.net/dist/0install"/>
-  <homepage>http://github.com/gfxmonk/python-irank</homepage>
+	<homepage>http://github.com/gfxmonk/python-irank</homepage>
 	<description><![CDATA[
 A collection of tools for managing music ratings.
 
@@ -62,20 +62,21 @@ new_good: datetime(updated_at, 'unixepoch') > datetime('NOW', 'localtime', '-4 m
 Metadata is stored inside the comment field of the file, in the form "[key=value]". I
 have changed operating systems and music players a handful of times since origininally
 writing irank, and this is the best way to keep them portable that I know of.
-]]>
-	</description>
-
+]]></description>
 	<group main="_irank">
 		<requires interface="http://gfxmonk.net/dist/0install/tagpy.xml">
 		</requires>
-
+		<requires interface="http://gfxmonk.net/dist/0install/pyyaml.xml">
+			<environment insert="lib" mode="prepend" name="PYTHONPATH"/>
+		</requires>
+		<!-- -->
 		<implementation id="sha1new=f55a320eba10594dce9f509abbd01faa80324be8" released="2010-10-16" version="0.1.2">
-    <manifest-digest sha256="79528b57a07257ca837a82ef4bfdb9e93bae34accec6f24b190eec5f71f6aa13"/>
-    <archive href="http://gfxmonk.net/dist/0install/irank/irank-0.1.2.tgz" size="27100"/>
-  </implementation>
+			<manifest-digest sha256="79528b57a07257ca837a82ef4bfdb9e93bae34accec6f24b190eec5f71f6aa13"/>
+			<archive href="http://gfxmonk.net/dist/0install/irank/irank-0.1.2.tgz" size="27100"/>
+		</implementation>
 		<implementation id="sha1new=fe684bd724702fed8ab9e2e7edf7aa0bf47bc50e" released="2010-10-16" version="0.1.3">
-    <manifest-digest sha256="2da4a73b6fdfeccb1323a85211d5108c2fc754e7841d8fe67664fb26d12b07cb"/>
-    <archive href="http://gfxmonk.net/dist/0install/irank/irank-0.1.3.tgz" size="27101"/>
-  </implementation>
+			<manifest-digest sha256="2da4a73b6fdfeccb1323a85211d5108c2fc754e7841d8fe67664fb26d12b07cb"/>
+			<archive href="http://gfxmonk.net/dist/0install/irank/irank-0.1.3.tgz" size="27101"/>
+		</implementation>
 	</group>
 </interface>
