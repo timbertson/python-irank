@@ -9,9 +9,12 @@ def main(base, name, *directories):
 	dirpaths = [os.path.join(base, d) for d in directories]
 	with open(fullpath, 'w') as f:
 		for dirpath in dirpaths:
-			for filename in os.listdir(dirpath):
-				if not os.path.isdir(os.path.join(dirpath, filename)):
-					print >> f, filename
+			filepath = lambda p: os.path.join(dirpath, p)
+			ctime = lambda p: os.stat(filepath(p)).st_ctime
+			isfile = lambda p: os.path.isfile(filepath(p))
+			files = filter(isfile, os.listdir(dirpath))
+			for filename in sorted(files, key=ctime):
+				print >> f, filename
 
 def run():
 	usage = """Usage: %prog [OPTIONS] playlist-name [directoryname [directoryname ...]]
