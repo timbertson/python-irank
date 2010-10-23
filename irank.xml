@@ -69,6 +69,8 @@ writing irank, and this is the best way to keep them portable that I know of.
 		<requires interface="http://gfxmonk.net/dist/0install/pyyaml.xml">
 			<environment insert="lib" mode="prepend" name="PYTHONPATH"/>
 		</requires>
+		<requires interface="http://gfxmonk.net/dist/0install/dbus-python.xml">
+		</requires>
 		<!-- -->
 		<implementation id="sha1new=f55a320eba10594dce9f509abbd01faa80324be8" released="2010-10-16" version="0.1.2">
 			<manifest-digest sha256="79528b57a07257ca837a82ef4bfdb9e93bae34accec6f24b190eec5f71f6aa13"/>
