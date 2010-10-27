@@ -1,13 +1,17 @@
-# here lies some code relating to mpris, which should replace the rhytmhbox code at some point
-# examples nabbed from http://github.com/mackstann/mpris-remote/blob/master/mpris-remote
+#!/usr/bin/env python
+import os, sys, re, time, urllib2, dbus, gobject
 
+from dbus.mainloop.glib import DBusGMainLoop
+DBusGMainLoop(set_as_default=True)
+METADATA = 'Metadata'
+URL_PROPERTY = 'xesam:url'
 
+mpris_prefix="org.mpris.MediaPlayer2."
+PLAYER = 'org.mpris.MediaPlayer2.Player'
+mpris_object="/org/mpris/MediaPlayer2"
 
-import os, sys, re, time, urllib2, dbus
-
-mpris_prefix="org.mpris.MediaPlayer2"
 def possible_names():
-	return [ name[len(mpris_prefix):] for name in bus.list_names() if org_mpris_re.match(name) ]
+	return [ name[len(mpris_prefix):] for name in bus.list_names() if name.startswith(mpris_prefix) ]
 
 # returns first matching player
 def get_player():
@@ -17,15 +21,47 @@ def get_player():
 		raise SystemExit(1)
 	return names[0]
 
-bus = dbus.SessionBus()
-player_name = os.environ.get('MPRIS_REMOTE_PLAYER', '*')
+def init():
+	global bus, player_namespace, player, properties
+	bus = dbus.SessionBus()
+	player_name = os.environ.get('MPRIS_REMOTE_PLAYER', None) or get_player()
+	player_namespace = mpris_prefix + player_name
+	player_obj = bus.get_object(player_namespace, mpris_object)
+	player = dbus.Interface(player_obj, dbus_interface=PLAYER)
+	properties = dbus.Interface(player_obj, dbus_interface=dbus.PROPERTIES_IFACE)
 
-if player_name == '*':
-	player_name = get_player()
+def _path(uri):
+	transport, path = urllib2.splittype(uri)
+	if transport != 'file':
+		raise ValueError("%r type is not 'file'" % (transport,))
+	return urllib2.unquote(path[2:]).encode('utf-8')
 
-root_obj = bus.get_object('org.mpris.%s' % player_name, '/')
-player_obj = bus.get_object('org.mpris.%s' % player_name, '/Player')
+def get_metadata():
+	return properties.GetAll(PLAYER)[METADATA]
 
-root = dbus.Interface(root_obj, dbus_interface='org.freedesktop.MediaPlayer')
-player = dbus.Interface(player_obj, dbus_interface='org.freedesktop.MediaPlayer')
+def current_file():
+	uri = get_metadata()[URL_PROPERTY]
+	try:
+		return _path(uri)
+	except ValueError:
+		print "Invalid URI: %r" % (uri,)
+		raise
 
+def playing_songs(cb):
+	def playing_uri_changed(source, properties, signature):
+		try:
+			uri = properties[METADATA][URL_PROPERTY]
+		except KeyError:
+			return
+		cb(_path(uri))
+
+	properties.connect_to_signal('PropertiesChanged', playing_uri_changed)
+	cb(current_file())
+	loop = gobject.MainLoop()
+	loop.run()
+
+if __name__ == '__main__':
+	init()
+	def _(s):
+		print repr(s)
+	playing_songs(_)
