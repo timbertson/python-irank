@@ -80,5 +80,9 @@ writing irank, and this is the best way to keep them portable that I know of.
 			<manifest-digest sha256="2da4a73b6fdfeccb1323a85211d5108c2fc754e7841d8fe67664fb26d12b07cb"/>
 			<archive href="http://gfxmonk.net/dist/0install/irank/irank-0.1.3.tgz" size="27101"/>
 		</implementation>
+		<implementation id="sha1new=b1917e69225b76ce6046508e08423c3ec0d57679" released="2010-11-07" version="0.1.4">
+    <manifest-digest sha256="29d0b86eb2c33867b43e76314a6a333a2ef0830e350eb71b51307b55ee9e78a1"/>
+    <archive href="http://gfxmonk.net/dist/0install/irank/irank-0.1.4.tgz" size="31099"/>
+  </implementation>
 	</group>
 </interface>
