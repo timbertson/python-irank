@@ -1,0 +1,6 @@
+#!/bin/bash
+
+irank/mpris-display display &
+irank/mpris-display edit
+
+kill %

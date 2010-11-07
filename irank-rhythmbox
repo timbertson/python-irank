@@ -1,6 +1,2 @@
 #!/bin/bash
-
-_irank-rhythmbox-impl display &
-_irank-rhythmbox-impl edit
-
-kill %
+MPRIS_REMOTE_PLAYER=rhythmbox exec "$(dirname "%0")/irank-mpris"
