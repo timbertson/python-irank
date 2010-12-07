@@ -1,2 +1,2 @@
 #!/bin/bash
-MPRIS_REMOTE_PLAYER=rhythmbox exec "$(dirname "%0")/irank-mpris"
+MPRIS_REMOTE_PLAYER=rhythmbox exec "$(dirname "$0")/irank-mpris"
