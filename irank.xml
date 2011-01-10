@@ -64,13 +64,11 @@ have changed operating systems and music players a handful of times since origin
 writing irank, and this is the best way to keep them portable that I know of.
 ]]></description>
 	<group main="_irank">
-		<requires interface="http://gfxmonk.net/dist/0install/tagpy.xml">
-		</requires>
-		<requires interface="http://gfxmonk.net/dist/0install/pyyaml.xml">
-			<environment insert="lib" mode="prepend" name="PYTHONPATH"/>
-		</requires>
-		<requires interface="http://gfxmonk.net/dist/0install/dbus-python.xml">
-		</requires>
+		<environment insert="" mode="append" name="PYTHONPATH"/>
+		<environment insert="" mode="append" name="PATH"/>
+		<requires interface="http://gfxmonk.net/dist/0install/tagpy.xml"/>
+		<requires interface="http://gfxmonk.net/dist/0install/pyyaml-python2.xml"/>
+		<requires interface="http://services.sugarlabs.org/dbus-python"/>
 		<!-- -->
 		<implementation id="sha1new=f55a320eba10594dce9f509abbd01faa80324be8" released="2010-10-16" version="0.1.2">
 			<manifest-digest sha256="79528b57a07257ca837a82ef4bfdb9e93bae34accec6f24b190eec5f71f6aa13"/>
@@ -81,16 +79,16 @@ writing irank, and this is the best way to keep them portable that I know of.
 			<archive href="http://gfxmonk.net/dist/0install/irank/irank-0.1.3.tgz" size="27101"/>
 		</implementation>
 		<implementation id="sha1new=b1917e69225b76ce6046508e08423c3ec0d57679" released="2010-11-07" version="0.1.4">
-    <manifest-digest sha256="29d0b86eb2c33867b43e76314a6a333a2ef0830e350eb71b51307b55ee9e78a1"/>
-    <archive href="http://gfxmonk.net/dist/0install/irank/irank-0.1.4.tgz" size="31099"/>
-  </implementation>
+			<manifest-digest sha256="29d0b86eb2c33867b43e76314a6a333a2ef0830e350eb71b51307b55ee9e78a1"/>
+			<archive href="http://gfxmonk.net/dist/0install/irank/irank-0.1.4.tgz" size="31099"/>
+		</implementation>
 		<implementation id="sha1new=a639c8680922c4c0c1db87cd2a7053b42e69dd96" released="2010-12-07" version="0.1.5">
-    <manifest-digest sha256="bf505a81d46599e63a8a109b8d66bdc027b2be975546467b8a93dfa59cd21317"/>
-    <archive href="http://gfxmonk.net/dist/0install/irank/irank-0.1.5.tgz" size="31108"/>
-  </implementation>
+			<manifest-digest sha256="bf505a81d46599e63a8a109b8d66bdc027b2be975546467b8a93dfa59cd21317"/>
+			<archive href="http://gfxmonk.net/dist/0install/irank/irank-0.1.5.tgz" size="31108"/>
+		</implementation>
 		<implementation id="sha1new=b976961e192967334e332a2f9a4e1a6e6f9bfea9" released="2010-12-23" version="0.1.6">
-    <manifest-digest sha256="e7b25079c536ca5da2228937bc3cc485697e27bf8d6873ad6654591e483596b4"/>
-    <archive href="http://gfxmonk.net/dist/0install/irank/irank-0.1.6.tgz" size="31126"/>
-  </implementation>
+			<manifest-digest sha256="e7b25079c536ca5da2228937bc3cc485697e27bf8d6873ad6654591e483596b4"/>
+			<archive href="http://gfxmonk.net/dist/0install/irank/irank-0.1.6.tgz" size="31126"/>
+		</implementation>
 	</group>
 </interface>
