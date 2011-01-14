@@ -64,8 +64,8 @@ have changed operating systems and music players a handful of times since origin
 writing irank, and this is the best way to keep them portable that I know of.
 ]]></description>
 	<group main="_irank">
-		<environment insert="" mode="append" name="PYTHONPATH"/>
-		<environment insert="" mode="append" name="PATH"/>
+		<environment insert="" mode="prepend" name="PYTHONPATH"/>
+		<environment insert="" mode="prepend" name="PATH"/>
 		<requires interface="http://gfxmonk.net/dist/0install/tagpy.xml"/>
 		<requires interface="http://gfxmonk.net/dist/0install/pyyaml-python2.xml"/>
 		<requires interface="http://services.sugarlabs.org/dbus-python"/>
