@@ -19,8 +19,8 @@ class Player(object):
 			init_glib()
 			instance = super(type(cls), cls).__new__(cls)
 			bus = dbus.SessionBus()
-			player_name = name or os.environ.get('MPRIS_REMOTE_PLAYER', None) or guess_player_name(bus)
-			player_namespace = mpris_prefix + player_name
+			instance.player_name = name or os.environ.get('MPRIS_REMOTE_PLAYER', None) or guess_player_name(bus)
+			player_namespace = mpris_prefix + instance.player_name
 			player_obj = bus.get_object(player_namespace, mpris_object)
 
 			instance.player = dbus.Interface(player_obj, dbus_interface=PLAYER)
@@ -74,6 +74,14 @@ def _path(uri):
 
 
 if __name__ == '__main__':
+	init_glib()
+	bus = dbus.SessionBus()
+	print "Available media players:\n" + "\n".join([' - %s' % (name,) for name in possible_names(bus)])
+	print ""
 	def _(s):
 		print repr(s)
-	Player().each_track(_)
+	player = Player()
+	print "Monitoring track details from %s..." % (player.player_name,)
+	try:
+		player.each_track(_)
+	except KeyboardInterrupt: pass
