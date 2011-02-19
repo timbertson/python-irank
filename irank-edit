@@ -8,7 +8,7 @@ if __name__ == '__main__':
 	if '--help' in args:
 		sys.exit(1)
 	if LS_FLAG in args:
-		from irank import curses_editor as editor
+		from irank import editor as editor
 		args.remove(LS_FLAG)
 		editor.LIST_MODE = True
 	else:

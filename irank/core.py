@@ -12,7 +12,7 @@ try:
 		KEYS = filter(identity, map(strip, f.readlines()))
 except StandardError:
 	print >> sys.stderr, ("Using the default rating keys.\n" +
-			"You can make your own by writing them one line at a time to ~/.config/irank/ratings")
+	    "You can make your own by writing them one line at a time to ~/.config/irank/ratings")
 
 class Song(object):
 	def __init__(self, path):
