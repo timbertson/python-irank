@@ -68,7 +68,7 @@ writing irank, and this is the best way to keep them portable that I know of.
 		<environment insert="" mode="prepend" name="PATH"/>
 		<requires interface="http://gfxmonk.net/dist/0install/tagpy.xml"/>
 		<requires interface="http://gfxmonk.net/dist/0install/pyyaml-python2.xml"/>
-		<requires interface="http://sweets.sugarlabs.org/base/dbus-python.xml"/>
+		<requires interface="http://sweets.sugarlabs.org/base/dbus-python"/>
 		<!-- -->
 		<implementation id="sha1new=f55a320eba10594dce9f509abbd01faa80324be8" released="2010-10-16" version="0.1.2">
 			<manifest-digest sha256="79528b57a07257ca837a82ef4bfdb9e93bae34accec6f24b190eec5f71f6aa13"/>

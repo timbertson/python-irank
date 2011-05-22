@@ -9,24 +9,27 @@ PLAYER = 'org.mpris.MediaPlayer2.Player'
 mpris_object="/org/mpris/MediaPlayer2"
 
 def init_glib():
+	if not init_glib.called:
+		init_glib.called = True
 	from dbus.mainloop.glib import DBusGMainLoop
 	DBusGMainLoop(set_as_default=True)
+init_glib.called = False
 
 class Player(object):
-	instance = None
-	def __new__(cls, name=None):
-		if cls.instance is None:
-			init_glib()
-			instance = super(type(cls), cls).__new__(cls)
-			bus = dbus.SessionBus()
-			instance.player_name = name or os.environ.get('MPRIS_REMOTE_PLAYER', None) or guess_player_name(bus)
-			player_namespace = mpris_prefix + instance.player_name
-			player_obj = bus.get_object(player_namespace, mpris_object)
+	@classmethod
+	def bus(cls):
+		init_glib()
+		return dbus.SessionBus()
 
-			instance.player = dbus.Interface(player_obj, dbus_interface=PLAYER)
-			instance.properties = dbus.Interface(player_obj, dbus_interface=dbus.PROPERTIES_IFACE)
-			cls.instance = instance
-		return cls.instance
+	def __init__(self, name=None):
+		init_glib()
+		bus = dbus.SessionBus()
+		self.player_name = name or os.environ.get('MPRIS_REMOTE_PLAYER', None) or type(self).guess_player_name()
+		player_namespace = mpris_prefix + self.player_name
+		player_obj = bus.get_object(player_namespace, mpris_object)
+
+		self.player = dbus.Interface(player_obj, dbus_interface=PLAYER)
+		self.properties = dbus.Interface(player_obj, dbus_interface=dbus.PROPERTIES_IFACE)
 
 	@property
 	def metadata(self):
@@ -53,18 +56,22 @@ class Player(object):
 		cb(self.track)
 		loop = gobject.MainLoop()
 		loop.run()
+	
+	def __repr__(self):
+		return '<mpris.Player (%s)>' % (self.player_name,)
 
+	@classmethod
+	def possible_names(cls):
+		return [ name[len(mpris_prefix):] for name in cls.bus().list_names() if name.startswith(mpris_prefix) ]
 
-def possible_names(bus):
-	return [ name[len(mpris_prefix):] for name in bus.list_names() if name.startswith(mpris_prefix) ]
-
-# returns first matching player
-def guess_player_name(bus):
-	names = possible_names(bus)
-	if not names:
-		print >>sys.stderr, "No MPRIS-compliant player found running."
-		raise SystemExit(1)
-	return names[0]
+	# returns first matching player
+	@classmethod
+	def guess_player_name(cls):
+		names = cls.possible_names()
+		if not names:
+			print >>sys.stderr, "No MPRIS-compliant player found running."
+			raise SystemExit(1)
+		return names[0]
 
 def _path(uri):
 	transport, path = urllib2.splittype(uri)
@@ -74,10 +81,6 @@ def _path(uri):
 
 
 if __name__ == '__main__':
-	init_glib()
-	bus = dbus.SessionBus()
-	print "Available media players:\n" + "\n".join([' - %s' % (name,) for name in possible_names(bus)])
-	print ""
 	def _(s):
 		print repr(s)
 	player = Player()
