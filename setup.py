@@ -5,7 +5,7 @@
 from setuptools import *
 setup(
 	name='irank',
-	version='0.1.6',
+	version='0.1.7',
 	author_email='tim3d.junk+irank@gmail.com',
 	author='Tim Cuthbertson',
 	description="music ranking metadata manager",
