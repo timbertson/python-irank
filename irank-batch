@@ -5,21 +5,23 @@ import optparse
 
 if __name__ == '__main__':
 	p = optparse.OptionParser()
+	p.add_option('-f', help='force', action='store_true', dest='force')
 	for k in irank.KEYS:
-		p.add_option('--' + k, default=None, type='int', dest=k, help='set ' + k)
+		p.add_option('--' + k, default=None, type='int', dest='rating_' + k, help='set ' + k)
 	opts, files = p.parse_args()
 	modifications = {}
 	for k in irank.KEYS:
-		val = getattr(opts, k)
+		val = getattr(opts, 'rating_' + k)
 		if val is not None:
 			modifications[k] = val
 
 	assert len(modifications) > 0
-	print >> sys.stderr, "Applying modifications: %s to %s files\n\nOK [Y/n]? " % (modifications,len(files))
-	if raw_input().strip().lower() not in ('', 'y', 'yes'): sys.exit(1)
+	if not opts.force:
+		print >> sys.stderr, "Applying modifications: %s to %s files\n\nOK [Y/n]? " % (modifications,len(files))
+		if raw_input().strip().lower() not in ('', 'y', 'yes'): sys.exit(1)
 
 	for file in files:
 		song = irank.Song(file)
 		for key, val in modifications.items():
-			song[key] = val
+			song.values[key] = val
 		song.save()
