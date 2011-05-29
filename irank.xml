@@ -69,6 +69,10 @@ writing irank, and this is the best way to keep them portable that I know of.
 		<requires interface="http://gfxmonk.net/dist/0install/tagpy.xml"/>
 		<requires interface="http://gfxmonk.net/dist/0install/pyyaml-python2.xml"/>
 		<requires interface="http://sweets.sugarlabs.org/base/dbus-python"/>
+		<command name="test">
+			<runner interface="http://gfxmonk.net/dist/0install/nosetests-plugin-resolver.xml"/>
+			<requires interface="http://gfxmonk.net/dist/0install/mocktest.xml"/>
+		</command>
 		<!-- -->
 		<implementation id="sha1new=f55a320eba10594dce9f509abbd01faa80324be8" released="2010-10-16" version="0.1.2">
 			<manifest-digest sha256="79528b57a07257ca837a82ef4bfdb9e93bae34accec6f24b190eec5f71f6aa13"/>
@@ -93,6 +97,22 @@ writing irank, and this is the best way to keep them portable that I know of.
 		<implementation id="sha1new=e0a08361947c1e6dc0568f2931a4525226f966a5" released="2011-05-22" version="0.1.7">
 			<manifest-digest sha256="f57ea8baa2ca78ebc702dfca512e6d8704b43abc126409c4d7ec90180e7dcd32"/>
 			<archive href="http://gfxmonk.net/dist/0install/irank/irank-0.1.7.tgz" size="18576"/>
+		</implementation>
+	</group>
+	<group main="irank_bin">
+		<environment insert="" mode="prepend" name="PYTHONPATH"/>
+		<environment insert="" mode="prepend" name="PATH"/>
+		<requires interface="http://gfxmonk.net/dist/0install/mutagen.xml"/>
+		<requires interface="http://gfxmonk.net/dist/0install/pyyaml-python2.xml"/>
+		<requires interface="http://sweets.sugarlabs.org/base/dbus-python"/>
+		<command name="test">
+			<runner interface="http://gfxmonk.net/dist/0install/nosetests-plugin-resolver.xml"/>
+			<requires interface="http://gfxmonk.net/dist/0install/mocktest.xml"/>
+		</command>
+		<!-- -->
+		<implementation id="sha1new=722b8d15f8064e46ba4d5d4e8962c1c0db854964" released="2011-05-29" version="0.2">
+			<manifest-digest sha256="2bf814dbd5284951c03eda3ea70ab76874c520ae9569c4ad67ade41cd7921ace"/>
+			<archive href="http://gfxmonk.net/dist/0install/irank/irank-0.2.tgz" size="20563"/>
 		</implementation>
 	</group>
 </interface>

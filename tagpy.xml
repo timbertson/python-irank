@@ -6,7 +6,7 @@
 	<description>
 	</description>
 	<homepage>http://pypi.python.org/pypi/tagpy</homepage>
-	<publish xmlns="http://gfxmonk.net/dist/0install" mode="ignore"/>
+	<publish xmlns="http://gfxmonk.net/dist/0install" mode="package"/>
 	<group>
 		<package-implementation distributions="Debian" package="python-tagpy"/>
 		<package-implementation distributions="RPM" package="python-tag"/>

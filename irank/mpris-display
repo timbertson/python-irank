@@ -9,7 +9,7 @@ import subprocess
 player = mpris.Player()
 
 def run_with_current_track(process_name):
-	subprocess.Popen([process_name, player.track]).communicate()
+	subprocess.check_call([process_name, player.track])
 
 def edit_loop():
 	while True:
@@ -54,6 +54,9 @@ if __name__ == '__main__':
 	try:
 		actions[args[0]]()
 		sys.exit(0)
+	except subprocess.CalledProcessError, e:
+		print >> sys.stderr, e
+		sys.exit(1)
 	except KeyboardInterrupt:
 		sys.exit(2)
 

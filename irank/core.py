@@ -14,21 +14,104 @@ except StandardError:
 	print >> sys.stderr, ("Using the default rating keys.\n" +
 	    "You can make your own by writing them one line at a time to ~/.config/irank/ratings")
 
-class Song(object):
-	def __init__(self, path):
-		from tagpy import FileRef
+class BaseSong(object):
+	def __init__(self, filename):
+		self.filename = filename
 		try:
-			self.file = FileRef(path)
+			self._open_file(self.filename)
 		except ValueError, e:
-			raise ValueError("file %s: %s" % (path, e))
-		self.tags = self.file.tag()
-		self.artist = self.tags.artist
-		self.title = self.tags.title
-		self.values = Values(self.tags.comment)
+			raise ValueError("file %s: %s" % (filename, e))
+		assert self.file, "Failed to load file: %s" % (filename,)
+		self.artist = self._get_artist()
+		self.title = self._get_title()
+		comment = self._get_comment()
+		self.values = Values(comment)
 	
 	def save(self):
-		self.tags.comment = self.values.flatten()
+		self._set_comment(self.values.flatten())
+		assert self._get_comment() == self.values.flatten(), "Could not save tag!"
 		self.file.save()
+
+	def check(self):
+		orig_comment = self._get_comment()
+		new_comment = 'irank-test-comment'
+		self._set_comment(new_comment)
+		try:
+			actual_comment = self._get_comment()
+			return actual_comment == new_comment
+		finally:
+			self._set_comment(orig_comment)
+
+class MutagenSong(BaseSong):
+	DEFAULT_COMMENT = u''
+	DEFAULT_LANG='eng'
+	DEFAULT_LANG='eng'
+	COMMENT_KEY = u"COMM::'%s'" % (DEFAULT_LANG,)
+	FALLBACK_KEYS = [
+		u"COMM::'XXX'",
+		u"COMM:c0:'XXX'",
+	]
+	
+	def _make_comment(self, text):
+		import mutagen
+		return mutagen.id3.COMM(encoding=3, lang=self.DEFAULT_LANG, desc=u'', text=unicode(text))
+
+	def _tag_value(self, tag):
+		if tag is None: return u''
+		return tag.text[0]
+
+	def _open_file(self, path):
+		import mutagen
+		self.file = mutagen.File(path)
+		if self.file and not hasattr(self.file, 'tags'):
+			self.file.add_tags()
+
+	def _get_comment(self):
+		# debugging...
+		self._possible_comments = list(filter(lambda item: item[0].startswith('COMM:'), self.file.items()))
+		comment = None
+		for key in [self.COMMENT_KEY] + self.FALLBACK_KEYS:
+			comment = self.file.get(key, None)
+			if comment is not None:
+				break
+		if comment is None:
+			comment = self._make_comment(self.DEFAULT_COMMENT)
+		return self._tag_value(comment)
+	
+	def _set_comment(self, comment):
+		#self._comment.text = [unicode(comment)]
+		self.file[self.COMMENT_KEY] = self._make_comment(comment)
+	
+	def _get_artist(self):
+		tag = self.file.get('TPE1')
+		return self._tag_value(tag)
+	
+	def _get_title(self):
+		tag = self.file.get('TIT2')
+		return self._tag_value(tag)
+
+
+class TaglibSong(BaseSong):
+	def _open_file(self, path):
+		from tagpy import FileRef
+		self.file = FileRef(path)
+		self.tags = self.file.tag()
+
+	def _get_comment(self):
+		return self.tags.comment
+	
+	def _set_comment(self, comment):
+		self.tags.comment = comment
+
+	def _get_artist(self):
+		return self.tags.artist
+
+	def _get_title(self):
+		return self.tags.title
+	
+#Set the default Song implementation:
+Song = MutagenSong
+#Song = TaglibSong
 
 class Values(dict):
 	def __init__(self, str=''):
