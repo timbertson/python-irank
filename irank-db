@@ -1,0 +1,13 @@
+#!/usr/bin/env python
+from irank.config import IrankOptionParser, IrankApp
+from irank import db as irank_db
+
+def main():
+	parser = IrankOptionParser()
+	options, args = parser.parse_args()
+	app = IrankApp(options)
+	irank_db.populate_db(options.music, app.db_path)
+
+if __name__ == '__main__':
+	main()
+

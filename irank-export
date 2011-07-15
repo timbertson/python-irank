@@ -1,0 +1,90 @@
+#!/usr/bin/env python
+import os
+import tempfile
+import shutil
+import math
+
+from irank.config import IrankOptionParser, IrankApp
+from irank import db as irank_db
+
+def main():
+	p = IrankOptionParser('%prog -d DEST playlist_name [playlist_name ...]')
+	p.add_option('-d', '--dest', help='export destination', default=None)
+	p.add_option('-l', '--limit', help='per-playlist filesize limit', default=None)
+	opts, args = p.parse_args()
+	assert opts.dest, p.get_usage()
+	assert len(args) > 0, p.get_usage()
+	app = IrankApp(opts)
+
+	music_base = os.path.expanduser(opts.music)
+	irank_base = os.path.expanduser(opts.irank)
+	export_base = os.path.expanduser(opts.dest)
+	exported_dir = '__master'
+	export_music = os.path.join(export_base, exported_dir)
+	songs = {}
+	all_songs = set()
+
+	for playlist in args:
+		playlist_songs = set(app.songs_for(playlist, relative=True))
+		songs[playlist] = playlist_songs
+		all_songs.update(playlist_songs)
+		print "Queried playlist %s: %s files" % (playlist, len(playlist_songs))
+	
+	export_temp = os.path.join(irank_base, "__export_temp")
+	print "linking into %r ..." % (export_temp,)
+	total_size = link_all_files(all_songs, export_temp=export_temp, music_base=music_base)
+	try:
+		print "Syncing %s files (%0.2fgb)" % (len(all_songs),total_size / (math.pow(1000, 3)))
+		sync(export_temp, export_music)
+	finally:
+		shutil.rmtree(export_temp)
+	for playlist, files in songs.items():
+		exported_paths = [os.path.join(exported_dir, name) for name in files]
+		write_m3u(export_base, playlist, sorted(exported_paths))
+
+def link_all_files(all_songs, export_temp, music_base):
+	if os.path.exists(export_temp):
+		shutil.rmtree(export_temp)
+	else:
+		os.makedirs(export_temp)
+	total_size = 0
+	for file in all_songs:
+		#if not os.path.isdir(os.path.dirname(
+		link_dest = os.path.join(export_temp, file)
+		link_dest_dir = os.path.dirname(link_dest)
+		if not os.path.isdir(link_dest_dir):
+			os.makedirs(link_dest_dir)
+		src_file = os.path.join(music_base, file)
+		total_size += os.stat(src_file).st_size
+		os.link(src_file, link_dest)
+	return total_size
+
+def sync(src, dest):
+	import subprocess
+	if not os.path.isdir(dest):
+		os.makedirs(dest)
+	cmd = [
+		'rsync',
+		#'-n',
+		'-a',
+		#'-v',
+		'--delete',
+		src + os.path.sep, dest]
+	print "running: %r" % (cmd,)
+	proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
+	try:
+		proc.wait()
+	except KeyboardInterrupt:
+		try:
+			proc.kill()
+		finally:
+			raise KeyboardInterrupt()
+
+def write_m3u(dest, name, files):
+	with open(os.path.join(dest, name + '.m3u'), 'w') as output:
+		for name in files:
+			print >> output, name
+
+if __name__ == '__main__':
+	main()
+

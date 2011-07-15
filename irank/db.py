@@ -15,10 +15,17 @@ def populate_db(music_root, db_path = None):
 		try:
 			os.remove(db_path)
 		except OSError: pass
-	db = sqlite3.connect(db_path or ':memory:')
+	db = load(db_path or ':memory:')
 
 	key_cols = map(sanitise_column_name, irank.KEYS)
-	songs_definition = "create table songs (path string PRIMARY KEY, artist string, title string, created_at , updated_at, %s);"
+	songs_definition = ("create table songs (" +
+		"path string PRIMARY KEY," +
+		"artist string," +
+		"title string," +
+		"size INTEGER," +
+		"created_at," +
+		"updated_at," +
+		"%s);")
 	updates_definition = "create table updates (path string PRIMARY KEY, %s);"
 
 	custom_columns = ", ".join(["%s number" % (column,) for column in key_cols])
@@ -28,6 +35,12 @@ def populate_db(music_root, db_path = None):
 
 	add_songs(music_root, db)
 	return db
+
+def load(path):
+	try:
+		return sqlite3.connect(path)
+	except sqlite3.OperationalError, e:
+		raise RuntimeError("Can't open file at %r: %s" % (path,e))
 
 def add_songs(music_root, db):
 	for path, dirs, files in os.walk(music_root):
@@ -40,11 +53,14 @@ def add_songs(music_root, db):
 				import time
 				time.sleep(5)
 				continue
-			sql = "insert into songs values (?, ?, ?, ?, ?, %s)" % (", ".join(["?" for k in irank.KEYS]),)
 			filestat = os.stat(filepath)
-			ctime = filestat[stat.ST_CTIME]
-			mtime = filestat[stat.ST_MTIME]
-			data = tuple([unicode(filepath, 'UTF-8'), song.artist, song.title, ctime, mtime] + song.values.values())
+			ctime = filestat.st_ctime
+			mtime = filestat.st_mtime
+			size = filestat.st_size
+			standard_fields = [unicode(filepath, 'UTF-8'), song.artist, song.title, size, ctime, mtime]
+			data = tuple(standard_fields + song.values.values())
+			placeholders = ", ".join(["?" for v in data])
+			sql = "insert into songs values (%s)" % (placeholders,)
 			db.execute(sql, data)
 	db.commit()
 

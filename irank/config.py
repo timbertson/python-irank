@@ -15,12 +15,17 @@ class IrankOptionParser(OptionParser):
 		self.__custom_paths = self.__get_custom_paths()
 		self.add_option('--music', help='input (music) directory', **self.__default_d('music'))
 		self.add_option('--irank', help='output (irank playlist) directory', **self.__default_d('irank'))
+		self.add_option('-c', '--config', help='config file (%default)', default=config_file('playlists'))
 		self.add_option('-v', '--verbose', action='store_true')
 	
 	def parse_args(self, *args):
 		opts, args = OptionParser.parse_args(self, *args)
 		if not hasattr(opts, 'android'):
 			opts.android = self.__default('android')
+		for path_attr in ('irank', 'music'):
+			try:
+				setattr(opts, path_attr, os.path.expanduser(getattr(opts, path_attr)))
+			except AttributeError: pass
 		return (opts, args)
 	
 	def __default(self, name):
@@ -37,3 +42,31 @@ class IrankOptionParser(OptionParser):
 				return list(yaml.load_all(f))[0]
 		except OSError:
 			return {}
+
+class IrankApp(object):
+	def __init__(self, opts):
+		self.opts = opts
+	
+	@property
+	def db_path(self):
+		return getattr(self.opts, 'db_path', os.path.expanduser(os.path.join(self.opts.irank, "irank.sqlite")))
+	
+	@property
+	def playlist_rules(self):
+		with open(os.path.expanduser(self.opts.config)) as input_file:
+			return yaml.load(input_file)
+	
+	@property
+	def db(self):
+		from irank import db
+		return db.load(self.db_path)
+
+	def songs_for(self, playlist_name, db=None, relative=False):
+		db = db or self.db
+		condition = self.playlist_rules[playlist_name]
+		src = os.path.expanduser(self.opts.music)
+		for filepath, in db.execute('select path from songs where %s' % (condition,)):
+			if relative:
+				if filepath.startswith(src):
+					filepath = filepath[len(src) + len(os.path.sep):]
+			yield filepath

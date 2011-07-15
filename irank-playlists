@@ -10,12 +10,11 @@ import yaml
 import traceback
 
 import irank
-from irank.config import config_file, realpath, IrankOptionParser
+from irank.config import config_file, realpath, IrankOptionParser, IrankApp
 from irank.db import populate_db
 
 VERBOSE = False
 LINK_FN = os.link
-DB_ONLY = False
 
 def ensure_no_real_files_exist(location):
 	for path, dirs, files in os.walk(location):
@@ -34,17 +33,14 @@ def clear_dir(location):
 		except OSError:
 			shutil.rmtree(full_path)
 
-def run(input_file, music_root, playlist_root):
+def run(input_file, music_root, playlist_root, db_path):
 	if os.path.isdir(playlist_root):
-		if not DB_ONLY:
-			clear_dir(playlist_root)
+		clear_dir(playlist_root)
 	else:
 		os.mkdir(playlist_root)
-	playlist_defs = list(yaml.load_all(open(input_file)))[0]
 	print "Populating database.."
-	db = populate_db(music_root, db_path = os.path.join(playlist_root, "irank.sqlite"))
-	if(DB_ONLY):
-		return
+	db = populate_db(music_root, db_path = db_path)
+	playlist_defs = list(yaml.load_all(open(input_file)))[0]
 	print '-' * 80
 	print
 	create_playlists(playlist_defs, db, playlist_root)
@@ -68,13 +64,11 @@ def create_playlist(name, condition, db, dest_dir):
 def main():
 	global VERBOSE, LINK_FN, DB_ONLY
 	parser = IrankOptionParser()
-	parser.add_option('-c', '--config', help='config file (%default)', default=config_file('playlists'))
 	parser.add_option('-s', '--symlink', action='store_true')
 	parser.add_option('--db-only', action='store_true', default=False, help='generate db only - no playlists')
 	options, args = parser.parse_args()
 	VERBOSE = options.verbose
 	LINK_FN = os.symlink if options.symlink else os.link
-	DB_ONLY = options.db_only
 
 	def usage():
 		raise ValueError(parser.format_help())
@@ -82,7 +76,10 @@ def main():
 	if not options.irank: usage()
 	if not options.music: usage()
 	
-	run(*map(realpath, [options.config, options.music, options.irank]))
+	app = IrankApp(options)
+	run(*map(realpath, [options.config, options.music, options.irank, app.db_path]))
 
 if __name__ == '__main__':
+	if '--db-only' in sys.argv:
+		raise RuntimeError("use irank-db")
 	main()
