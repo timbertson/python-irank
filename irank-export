@@ -66,6 +66,7 @@ def sync(src, dest):
 	cmd = [
 		'rsync',
 		#'-n',
+		'--progress',
 		'-a',
 		#'-v',
 		'--delete',

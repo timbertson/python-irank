@@ -25,7 +25,11 @@ def load_db(path):
 	finally:
 		db.commit()
 	try:
-		for update in db.execute("select path, " + keys + " from updates;"):
+		updates = db.execute("select path, " + keys + " from updates;")
+		if(opts.count):
+			print len(list(updates))
+			return
+		for update in updates:
 			logging.debug("fetched row: " + repr(update))
 			path = update[0]
 			new_values = update[1:]
@@ -46,7 +50,7 @@ def load_db(path):
 				errors += 1
 				print >> sys.stderr, "Error processing update to %s:\n    %s: %s" % ( filename, type(e).__name__, e,)
 		if(errors > 0):
-			print "-------------------"
+			print >> sys.stderr, "-------------------"
 			if not opts.no:
 				if opts.yes or (raw_input("Errors occurred. delete everything anyway? [y/N] ").lower() in ('','y','yes')):
 					logging.info("removing all diff entries")
@@ -65,6 +69,7 @@ def main():
 attempts to apply all new ratings to the original tracks""")
 	p.add_option('-y', '--yes', help="answer yes to all questions", default=False, action='store_true')
 	p.add_option('-n', '--no', help="answer no to all questions", default=False, action='store_true')
+	p.add_option('--count', help="print number of pending updates", default=False, action='store_true')
 	opts, args = p.parse_args()
 
 	level = logging.INFO
