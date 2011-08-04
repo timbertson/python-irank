@@ -22,7 +22,6 @@ def populate_db(music_root, db_path = None):
 		"path string PRIMARY KEY," +
 		"artist string," +
 		"title string," +
-		"size INTEGER," +
 		"created_at," +
 		"updated_at," +
 		"%s);")
@@ -56,8 +55,7 @@ def add_songs(music_root, db):
 			filestat = os.stat(filepath)
 			ctime = filestat.st_ctime
 			mtime = filestat.st_mtime
-			size = filestat.st_size
-			standard_fields = [unicode(filepath, 'UTF-8'), song.artist, song.title, size, ctime, mtime]
+			standard_fields = [unicode(filepath, 'UTF-8'), song.artist, song.title, ctime, mtime]
 			data = tuple(standard_fields + song.values.values())
 			placeholders = ", ".join(["?" for v in data])
 			sql = "insert into songs values (%s)" % (placeholders,)
