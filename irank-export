@@ -3,6 +3,7 @@ import os
 import tempfile
 import shutil
 import math
+import sys
 
 from irank.config import IrankOptionParser, IrankApp
 from irank import db as irank_db
@@ -10,7 +11,7 @@ from irank import db as irank_db
 def main():
 	p = IrankOptionParser('%prog -d DEST playlist_name [playlist_name ...]')
 	p.add_option('-d', '--dest', help='export destination', default=None)
-	p.add_option('-l', '--limit', help='per-playlist filesize limit', default=None)
+	p.add_option('-l', '--limit', type="int", help='per-playlist filesize limit', default=None)
 	opts, args = p.parse_args()
 	assert opts.dest, p.get_usage()
 	assert len(args) > 0, p.get_usage()
@@ -32,7 +33,7 @@ def main():
 	
 	export_temp = os.path.join(irank_base, "__export_temp")
 	print "linking into %r ..." % (export_temp,)
-	total_size = link_all_files(all_songs, export_temp=export_temp, music_base=music_base)
+	total_size = link_all_files(all_songs, export_temp=export_temp, music_base=music_base, limit=opts.limit)
 	try:
 		print "Syncing %s files (%0.2fgb)" % (len(all_songs),total_size / (math.pow(1000, 3)))
 		sync(export_temp, export_music)
@@ -42,20 +43,34 @@ def main():
 		exported_paths = [os.path.join(exported_dir, name) for name in files]
 		write_m3u(export_base, playlist, sorted(exported_paths))
 
-def link_all_files(all_songs, export_temp, music_base):
+def link_all_files(all_songs, export_temp, music_base, limit=None):
 	if os.path.exists(export_temp):
 		shutil.rmtree(export_temp)
 	else:
 		os.makedirs(export_temp)
 	total_size = 0
+	def file_size(path):
+		try:
+			return os.stat(path).st_size
+		except OSError:
+			print >> sys.stderr, "couldn't get file size of file: %s" % (path,)
+		return None
+
 	for file in all_songs:
 		#if not os.path.isdir(os.path.dirname(
+		src_file = os.path.join(music_base, file)
+		src_file_size = file_size(src_file)
+		if src_file_size is None:
+			continue
+		if limit and (total_size + src_file_size) > limit:
+			return total_size
+		else:
+			total_size += src_file_size
+
 		link_dest = os.path.join(export_temp, file)
 		link_dest_dir = os.path.dirname(link_dest)
 		if not os.path.isdir(link_dest_dir):
 			os.makedirs(link_dest_dir)
-		src_file = os.path.join(music_base, file)
-		total_size += os.stat(src_file).st_size
 		os.link(src_file, link_dest)
 	return total_size
 
