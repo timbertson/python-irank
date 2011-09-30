@@ -43,6 +43,9 @@ class Player(object):
 		except ValueError:
 			print "Invalid URI: %r" % (uri,)
 			raise
+	
+	def next(self):
+		self.player.Next();
 
 	def each_track(self, cb):
 		def playing_uri_changed(source, properties, signature):

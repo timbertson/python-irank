@@ -8,8 +8,10 @@ import subprocess
 
 player = mpris.Player()
 
-def run_with_current_track(process_name):
+def run_with_current_track(process_name, next_song=False):
 	subprocess.check_call([process_name, player.track])
+	if(next_song):
+		player.next()
 
 def edit_loop():
 	while True:
@@ -18,11 +20,11 @@ def edit_loop():
 			input = raw_input().strip()
 		except EOFError: break
 		if input == 'd':
-			run_with_current_track('irank-delete')
+			run_with_current_track('irank-delete', True)
 		elif input == 'k':
-			run_with_current_track('irank-keep')
+			run_with_current_track('irank-keep', True)
 		elif input == 'a':
-			run_with_current_track('irank-discard')
+			run_with_current_track('irank-discard', True)
 		elif not input:
 			clear()
 			# just running the function should work, but curses gets in a funny state sometimes...
