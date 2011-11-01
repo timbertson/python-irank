@@ -54,12 +54,15 @@ def create_playlist(name, condition, db, dest_dir):
 	print "creating playlist: %s" % (name,)
 	output_folder = os.path.join(dest_dir, name)
 	os.mkdir(output_folder)
-	for filepath, in db.execute('select path from songs where %s' % (condition,)):
-		try:
-			LINK_FN(filepath, os.path.join(output_folder, os.path.basename(filepath)))
-		except (UnicodeEncodeError, OSError), e:
-			print "Error linking file: %s" % (filepath.decode('ascii','replace'),)
-			traceback.print_exc()
+	with open(os.path.join(dest_dir, name + '.m3u'), 'w') as output_playlist:
+		for filepath, in db.execute('select path from songs where %s' % (condition,)):
+			try:
+				playlist_song_path = os.path.join(output_folder, os.path.basename(filepath))
+				LINK_FN(filepath, playlist_song_path)
+				print >> output_playlist, playlist_song_path
+			except (UnicodeEncodeError, OSError), e:
+				print "Error linking file: %s" % (filepath.decode('ascii','replace'),)
+				traceback.print_exc()
 
 def main():
 	global VERBOSE, LINK_FN, DB_ONLY
