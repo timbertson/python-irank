@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from tagpy import FileRef
 import re
 import os
 import sys
