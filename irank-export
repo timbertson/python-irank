@@ -7,6 +7,7 @@ import sys
 
 from irank.config import IrankOptionParser, IrankApp
 from irank import db as irank_db
+STATUS = 0
 
 def main():
 	p = IrankOptionParser('%prog -d DEST playlist_name [playlist_name ...]')
@@ -41,6 +42,7 @@ def main():
 		shutil.rmtree(export_temp)
 	for playlist, files in songs.items():
 		exported_paths = [os.path.join(exported_dir, name) for name in files]
+		print "writing playlist: %s" % (playlist,)
 		write_m3u(export_base, playlist, sorted(exported_paths))
 
 def link_all_files(all_songs, export_temp, music_base, limit=None):
@@ -97,10 +99,17 @@ def sync(src, dest):
 			raise KeyboardInterrupt()
 
 def write_m3u(dest, name, files):
+	global STATUS
+	encoding = sys.getfilesystemencoding()
 	with open(os.path.join(dest, name + '.m3u'), 'w') as output:
 		for name in files:
-			print >> output, name
+			try:
+				print >> output, name.encode(encoding)
+			except (UnicodeEncodeError, UnicodeDecodeError) as err:
+				print "FAILED to write song: %r" % (name,)
+				STATUS = 1
 
 if __name__ == '__main__':
 	main()
+	sys.exit(STATUS)
 
