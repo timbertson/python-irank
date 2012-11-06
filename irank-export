@@ -4,6 +4,7 @@ import tempfile
 import shutil
 import math
 import sys
+import subprocess
 
 from irank.config import IrankOptionParser, IrankApp
 from irank import db as irank_db
@@ -13,6 +14,7 @@ def main():
 	p = IrankOptionParser('%prog -d DEST playlist_name [playlist_name ...]')
 	p.add_option('-d', '--dest', help='export destination', default=None)
 	p.add_option('-l', '--limit', type="int", help='per-playlist filesize limit', default=None)
+	p.add_option('-i', '--interactive', action='store_true', help='Interactively resolve errors')
 	opts, args = p.parse_args()
 	assert opts.dest, p.get_usage()
 	assert len(args) > 0, p.get_usage()
@@ -37,7 +39,30 @@ def main():
 	total_size = link_all_files(all_songs, export_temp=export_temp, music_base=music_base, limit=opts.limit)
 	try:
 		print "Syncing %s files (%0.2fgb)" % (len(all_songs),total_size / (math.pow(1000, 3)))
-		sync(export_temp, export_music)
+		sync_opts = []
+		syncing = True
+		while syncing:
+			try:
+				sync(export_temp, export_music, additional_opts=sync_opts)
+				break
+			except (subprocess.CalledProcessError, OSError) as e:
+				if not opts.interactive:
+					raise
+				print >> sys.stderr, "Error syncing: %s\n" % (e,)
+				while True:
+					print >> sys.stderr, "Press Ctrl-C to abort, 'r' to restart, <return> to continue (skipping existing files) and 's' to skip to next step"
+					result = raw_input().strip().lower()
+					if result == '':
+						sync_opts = ['--ignore-existing']
+						break
+					elif result == 'r':
+						sync_opts = []
+						break
+					elif result == 's':
+						syncing = False
+						break
+					else:
+						print >> sys.stderr, "Eh?"
 	finally:
 		shutil.rmtree(export_temp)
 	for playlist, files in songs.items():
@@ -76,8 +101,7 @@ def link_all_files(all_songs, export_temp, music_base, limit=None):
 		os.link(src_file, link_dest)
 	return total_size
 
-def sync(src, dest):
-	import subprocess
+def sync(src, dest, additional_opts=[]):
 	if not os.path.isdir(dest):
 		os.makedirs(dest)
 	cmd = [
@@ -86,17 +110,9 @@ def sync(src, dest):
 		'--progress',
 		'-a',
 		#'-v',
-		'--delete',
-		src + os.path.sep, dest]
+		'--delete'] + additional_opts + [src + os.path.sep, dest]
 	print "running: %r" % (cmd,)
-	proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
-	try:
-		proc.wait()
-	except KeyboardInterrupt:
-		try:
-			proc.kill()
-		finally:
-			raise KeyboardInterrupt()
+	subprocess.check_call(cmd, stdin=subprocess.PIPE)
 
 def write_m3u(dest, name, files):
 	global STATUS
