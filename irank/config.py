@@ -1,4 +1,4 @@
-from optparse import OptionParser
+optparse import OptionParser
 import os, sys
 import yaml
 
@@ -39,7 +39,7 @@ class IrankOptionParser(OptionParser):
 	def __get_custom_paths(self):
 		try:
 			with open(PATHS_CONFIG) as f:
-				return list(yaml.load_all(f))[0]
+				return list(yaml.safe_load_all(f))[0]
 		except OSError:
 			return {}
 
@@ -54,7 +54,7 @@ class IrankApp(object):
 	@property
 	def playlist_rules(self):
 		with open(os.path.expanduser(self.opts.config)) as input_file:
-			return yaml.load(input_file)
+			return yaml.safe_load(input_file)
 	
 	@property
 	def db(self):

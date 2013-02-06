@@ -40,7 +40,7 @@ def run(input_file, music_root, playlist_root, db_path):
 		os.mkdir(playlist_root)
 	print "Populating database.."
 	db = populate_db(music_root, db_path = db_path)
-	playlist_defs = list(yaml.load_all(open(input_file)))[0]
+	playlist_defs = list(yaml.safe_load_all(open(input_file)))[0]
 	print '-' * 80
 	print
 	create_playlists(playlist_defs, db, playlist_root)
