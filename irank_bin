@@ -8,7 +8,6 @@ if [ "$#" -lt 1 ]; then
 	exit 1
 fi
 
-export PATH="$base:$PATH"
 cmd="irank-$1"
 shift
 exec "$base/$cmd" "$@"

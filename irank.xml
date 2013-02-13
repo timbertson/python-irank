@@ -100,6 +100,10 @@ writing irank, and this is the best way to keep them portable that I know of.
 		</implementation>
 	</group>
 	<group main="irank_bin">
+		<requires interface="http://repo.roscidus.com/python/python">
+			<version before="3"/>
+			<executable-in-path name="python"/>
+		</requires>
 		<environment insert="" mode="prepend" name="PYTHONPATH"/>
 		<environment insert="" mode="prepend" name="PATH"/>
 		<requires interface="http://gfxmonk.net/dist/0install/mutagen.xml"/>
