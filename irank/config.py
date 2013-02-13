@@ -1,4 +1,4 @@
-optparse import OptionParser
+from optparse import OptionParser
 import os, sys
 import yaml
 
