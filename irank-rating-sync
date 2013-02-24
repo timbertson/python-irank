@@ -76,8 +76,6 @@ attempts to apply all new ratings to the original tracks""")
 	if opts.verbose:
 		level = logging.DEBUG
 	logging.basicConfig(stream=sys.stderr, level=level, format="%(message)s")
-	if len(args) == 0 and opts.android is not None:
-		args = (os.path.join(opts.android, "irank.sqlite"),)
 	if len(args) != 1:
 		p.print_usage()
 		sys.exit(1)
