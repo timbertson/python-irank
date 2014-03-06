@@ -115,7 +115,7 @@ def sync(src, dest, additional_opts=[]):
 		'-r',
 		'-c',
 		#'-v',
-		'--delete'] + additional_opts + [src + os.path.sep, dest]
+		'--delete-before'] + additional_opts + [src + os.path.sep, dest]
 	print "running: %r" % (cmd,)
 	subprocess.check_call(cmd, stdin=subprocess.PIPE)
 
