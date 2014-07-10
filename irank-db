@@ -6,7 +6,8 @@ def main():
 	parser = IrankOptionParser()
 	options, args = parser.parse_args()
 	app = IrankApp(options)
-	irank_db.populate_db(options.music, app.db_path)
+	db = irank_db.populate_db(options.music, app.db_path)
+	db.close()
 
 if __name__ == '__main__':
 	main()

@@ -11,7 +11,7 @@ import traceback
 
 import irank
 from irank.config import config_file, realpath, IrankOptionParser, IrankApp
-from irank.db import populate_db
+from irank.db import populate_db, load as load_db
 
 VERBOSE = False
 LINK_FN = os.link
@@ -23,23 +23,29 @@ def ensure_no_real_files_exist(location):
 			raise RuntimeError("The following files are not symbolic links: %s" % (
 				"\n".join(not_links),))
 
-def clear_dir(location):
+def clear_dir(location, exclude=[]):
 	assert "irank" in location # hack to make me feel more secure that I won't be deleting my entire music library
 	#ensure_no_real_files_exist(location)
 	for content in os.listdir(location):
+		if content in exclude: continue
 		full_path = os.path.join(location, content)
 		try:
 			os.remove(full_path)
 		except OSError:
 			shutil.rmtree(full_path)
 
-def run(input_file, music_root, playlist_root, db_path):
+def run(input_file, music_root, playlist_root, db_path, use_existing_db):
 	if os.path.isdir(playlist_root):
-		clear_dir(playlist_root)
+		clear_dir(playlist_root, exclude=os.path.basename(db_path))
 	else:
 		os.mkdir(playlist_root)
-	print "Populating database.."
-	db = populate_db(music_root, db_path = db_path)
+
+	if use_existing_db:
+		db = load_db(db_path)
+	else:
+		print "Populating database.."
+		db = populate_db(music_root, db_path = db_path)
+
 	playlist_defs = list(yaml.safe_load_all(open(input_file)))[0]
 	print '-' * 80
 	print
@@ -70,6 +76,7 @@ def main():
 	parser = IrankOptionParser()
 	parser.add_option('-s', '--symlink', action='store_true')
 	parser.add_option('--db-only', action='store_true', default=False, help='generate db only - no playlists')
+	parser.add_option('-q', '--use-existing-db', action='store_true', default=False, help='use existing DB')
 	options, args = parser.parse_args()
 	VERBOSE = options.verbose
 	LINK_FN = os.symlink if options.symlink else os.link
@@ -79,9 +86,15 @@ def main():
 	if not len(args) == 0: usage()
 	if not options.irank: usage()
 	if not options.music: usage()
-	
+
 	app = IrankApp(options)
-	run(*map(realpath, [options.config, options.music, options.irank, app.db_path]))
+	run(
+		input_file=realpath(options.config),
+		music_root=realpath(options.music),
+		playlist_root=realpath(options.irank),
+		db_path=realpath(app.db_path),
+		use_existing_db = options.use_existing_db,
+	)
 
 if __name__ == '__main__':
 	if '--db-only' in sys.argv:
