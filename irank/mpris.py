@@ -1,5 +1,9 @@
 #!/usr/bin/env python
-import os, sys, re, time, urllib2, dbus, gobject
+from __future__ import print_function
+import os, sys, re, time, dbus, gobject
+import urllib2 as parse
+
+from .core import fsenc
 
 METADATA = 'Metadata'
 URL_PROPERTY = 'xesam:url'
@@ -41,7 +45,7 @@ class Player(object):
 		try:
 			return _path(uri)
 		except ValueError:
-			print "Invalid URI: %r" % (uri,)
+			print("Invalid URI: %r" % (uri,))
 			raise
 	
 	def next(self):
@@ -72,22 +76,35 @@ class Player(object):
 	def guess_player_name(cls):
 		names = cls.possible_names()
 		if not names:
-			print >>sys.stderr, "No MPRIS-compliant player found running."
+			print("No MPRIS-compliant player found running.", file=sys.stderr)
 			raise SystemExit(1)
 		return names[0]
 
 def _path(uri):
-	transport, path = urllib2.splittype(uri)
+	# gobject gives us a unicode URL, which is cool.
+	# But python2 decodes this into a _unicode_ string with _utf8_
+	# byte sequences, like a right loon.
+	#
+	# However, if we give python a str (bytes) instead, it spits out a
+	# str with those same utf-8 bytes, which will do. This may still be broken
+	# if your FS uses something other than UTF-8, though.
+	uri = uri.encode('ascii')
+	# XXX python3 note: this hack should not be necessary, and will break
+
+	transport, path = parse.splittype(uri)
+	print(repr(path))
 	if transport != 'file':
 		raise ValueError("%r type is not 'file'" % (transport,))
-	return urllib2.unquote(path[2:]).encode('utf-8')
+	# print('unquote     ', repr(parse.unquote(path[2:])))
+	# print('unquote, utf ', repr(parse.unquote(path[2:]).encode('utf-8')))
+	return parse.unquote(path[2:]).decode('utf-8').encode(fsenc)
 
 
 if __name__ == '__main__':
 	def _(s):
-		print repr(s)
+		print(repr(s))
 	player = Player()
-	print "Monitoring track details from %s..." % (player.player_name,)
+	print("Monitoring track details from %s..." % (player.player_name,))
 	try:
 		player.each_track(_)
 	except KeyboardInterrupt: pass

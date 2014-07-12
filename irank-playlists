@@ -10,6 +10,7 @@ import yaml
 import traceback
 
 import irank
+from irank.core import fsenc
 from irank.config import config_file, realpath, IrankOptionParser, IrankApp
 from irank.db import populate_db, load as load_db
 
@@ -60,7 +61,6 @@ def create_playlist(name, condition, db, dest_dir):
 	print "creating playlist: %s" % (name,)
 	output_folder = os.path.join(dest_dir, name)
 	os.mkdir(output_folder)
-	fsenc = sys.getfilesystemencoding()
 	with open(os.path.join(dest_dir, name + '.m3u'), 'w') as output_playlist:
 		for filepath, in db.execute('select path from songs where %s' % (condition,)):
 			try:

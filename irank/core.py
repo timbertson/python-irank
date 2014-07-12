@@ -1,7 +1,9 @@
-import re
+import re, sys
 import db
 
 irank_marker = re.compile("\\[([^]=]+)=([0-5])\\]")
+
+fsenc = sys.getfilesystemencoding()
 
 import os, sys
 KEYS = ['rating', 'Mood', 'Softness', 'Nostalgia']
