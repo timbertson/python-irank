@@ -92,11 +92,8 @@ def _path(uri):
 	# XXX python3 note: this hack should not be necessary, and will break
 
 	transport, path = parse.splittype(uri)
-	print(repr(path))
 	if transport != 'file':
 		raise ValueError("%r type is not 'file'" % (transport,))
-	# print('unquote     ', repr(parse.unquote(path[2:])))
-	# print('unquote, utf ', repr(parse.unquote(path[2:]).encode('utf-8')))
 	return parse.unquote(path[2:]).decode('utf-8').encode(fsenc)
 
 
