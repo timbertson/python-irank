@@ -5,6 +5,10 @@ irank_marker = re.compile("\\[([^]=]+)=([0-5])\\]")
 
 fsenc = sys.getfilesystemencoding()
 
+def version():
+	with open(os.path.join(os.path.dirname(__file__), '../VERSION')) as f:
+		return f.read().strip()
+
 import os, sys
 KEYS = ['rating', 'Mood', 'Softness', 'Nostalgia']
 try:

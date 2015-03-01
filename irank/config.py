@@ -49,7 +49,11 @@ class IrankApp(object):
 	
 	@property
 	def db_path(self):
-		return getattr(self.opts, 'db_path', os.path.expanduser(os.path.join(self.opts.irank, "irank.sqlite")))
+		return getattr(self.opts, 'db_path', os.path.join(self.base_path, "irank.sqlite"))
+
+	@property
+	def base_path(self):
+		return os.path.expanduser(self.opts.irank)
 	
 	@property
 	def playlist_rules(self):

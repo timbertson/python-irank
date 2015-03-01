@@ -23,7 +23,7 @@ def edit_loop():
 			run_with_current_track('irank-delete', True)
 		elif input == 'k':
 			run_with_current_track('irank-keep', True)
-		elif input == 'a':
+		elif input in ('a','y'):
 			run_with_current_track('irank-discard', True)
 		elif not input:
 			clear()

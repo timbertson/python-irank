@@ -10,4 +10,7 @@ fi
 
 cmd="irank-$1"
 shift
-exec "$base/$cmd" "$@"
+# set -x
+export PATH="${PATH:+:$PATH:}$base"
+export PYTHONPATH="$base${PYTHONPATH:+:$PYTHONPATH}"
+exec "$cmd" "$@"
