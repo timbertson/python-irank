@@ -75,10 +75,20 @@ class Player(object):
 	@classmethod
 	def guess_player_name(cls):
 		names = cls.possible_names()
+		# print(repr(names))
+		def score(name):
+			# video players are usually not what we want
+			if name in ('vlc', 'totem'):
+				return 0
+			# explicitly prefer music players
+			if name in ('rhythmbox', 'banshee'):
+				return 2
+			return 1
+
 		if not names:
 			print("No MPRIS-compliant player found running.", file=sys.stderr)
 			raise SystemExit(1)
-		return names[0]
+		return max(names, key=score)
 
 def _path(uri):
 	# gobject gives us a unicode URL, which is cool.
