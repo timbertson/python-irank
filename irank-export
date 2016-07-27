@@ -64,7 +64,7 @@ def main():
 					raise
 				print >> sys.stderr, "Error syncing: %s\n" % (e,)
 				while True:
-					print >> sys.stderr, "Press Ctrl-C to abort, 'r' to restart, <return> to continue (skipping existing files) and 's' to skip to next step"
+					print >> sys.stderr, "Press Ctrl-C to abort, 'r' to restart, <return> to retry (skipping existing files) and 's' to skip to next step"
 					result = raw_input().strip().lower()
 					if result == '':
 						extra_sync_opts = ['--ignore-existing']
