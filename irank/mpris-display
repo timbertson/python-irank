@@ -20,7 +20,7 @@ def edit_loop():
 			input = raw_input().strip()
 		except EOFError: break
 		if input == 'd':
-			run_with_current_track('irank-delete', True)
+			run_with_current_track('irank-delete', False)
 		elif input == 'k':
 			run_with_current_track('irank-keep', True)
 		elif input in ('a','y'):
