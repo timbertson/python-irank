@@ -97,27 +97,8 @@ class MutagenSong(BaseSong):
 		return self._tag_value(tag)
 
 
-class TaglibSong(BaseSong):
-	def _open_file(self, path):
-		from tagpy import FileRef
-		self.file = FileRef(path)
-		self.tags = self.file.tag()
-
-	def _get_comment(self):
-		return self.tags.comment
-	
-	def _set_comment(self, comment):
-		self.tags.comment = comment
-
-	def _get_artist(self):
-		return self.tags.artist
-
-	def _get_title(self):
-		return self.tags.title
-	
 #Set the default Song implementation:
 Song = MutagenSong
-#Song = TaglibSong
 
 class Values(dict):
 	def __init__(self, str=''):

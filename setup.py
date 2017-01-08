@@ -1,27 +1,21 @@
 #!/usr/bin/env python
 
-#NOTE: this file is deprecated - you should use the 0install feed (irank.xml)
-
+import os
 from setuptools import *
+here = os.path.dirname(__file__)
 setup(
 	name='irank',
 	version='0.3.2',
-	author_email='tim3d.junk+irank@gmail.com',
 	author='Tim Cuthbertson',
 	description="music ranking metadata manager",
 	packages = find_packages(exclude=['test', 'test.*']),
-	scripts = [
-		'irank-edit',
-		'_irank-rhythmbox-impl',
-		'irank-rhythmbox',
-		'nowplaying-rhythmbox',
-		'irank-rating-sync',
-		'irank-playlists',
-		'irank-ls',
+	scripts = ['bin/irank'] + [os.path.join('bin', f) for f in os.listdir(os.path.join(here, 'bin'))],
+	data_files = [
+		('libexec/irank', ['libexec/irank/mpris-display']),
 	],
-	zip_safe=True,
 	install_requires=[
 		'setuptools',
-		#'tagpy', # (best installed as a deb package)
+		'mutagen',
+		'pyyaml',
 	],
 )

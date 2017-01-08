@@ -1,0 +1,8 @@
+#!/bin/bash
+
+exe="$(dirname "$0")/../libexec/irank/mpris-display"
+cd "$(dirname "$0")" || exit 1
+"$exe" display &
+"$exe" edit
+
+kill %
