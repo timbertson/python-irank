@@ -12,6 +12,10 @@ if not args:
 	print('\n'.join(cmds), file=sys.stderr)
 	sys.exit(1)
 
-os.environ['PTHONPATH']=os.pathsep.join(sys.path)
+import irank
+irank_path = os.path.abspath(os.path.dirname(os.path.dirname(irank.__file__)))
+path = os.environ.get('PYTHONPATH', None)
+os.environ['PYTHONPATH'] = os.pathsep.join([irank_path, path]) if path else irank_path
+
 args[0] = "irank-%s" % args[0]
 os.execvp(args[0], args)
