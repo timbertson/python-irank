@@ -48,6 +48,10 @@ class BaseSong(object):
 		finally:
 			self._set_comment(orig_comment)
 
+	@staticmethod
+	def ErrorClasses():
+		return (StandardError,)
+
 class MutagenSong(BaseSong):
 	DEFAULT_COMMENT = u''
 	DEFAULT_LANG='eng'
@@ -58,6 +62,11 @@ class MutagenSong(BaseSong):
 		u"COMM:c0:'XXX'",
 	]
 	
+	@staticmethod
+	def ErrorClasses():
+		import mutagen.mp3
+		return (StandardError, mutagen.mp3.error,)
+
 	def _make_comment(self, text):
 		import mutagen
 		return mutagen.id3.COMM(encoding=3, lang=self.DEFAULT_LANG, desc=u'', text=unicode(text))

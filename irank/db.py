@@ -47,7 +47,7 @@ def add_songs(music_root, db):
 			filepath = os.path.join(path, file)
 			try:
 				song = irank.Song(filepath)
-			except StandardError, e:
+			except irank.Song.ErrorClasses() as e:
 				print >> sys.stderr, "error processing %s: %s" % (filepath, e)
 				import time
 				time.sleep(5)
