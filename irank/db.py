@@ -8,7 +8,7 @@ import re
 def sanitise_column_name(s):
 	return re.sub('[^a-zA-Z]', '_', s)
 
-def populate_db(music_root, db_path = None):
+def populate_db(music_root, db_path = None, verbose = False):
 	if db_path is not None:
 		if os.path.splitext(db_path)[-1] not in ('.sqlite','.db'):
 			raise RuntimeError("not a db file: %s" % (db_path))
@@ -32,7 +32,7 @@ def populate_db(music_root, db_path = None):
 	for definition in (songs_definition, updates_definition):
 		db.execute(definition % (custom_columns,))
 
-	add_songs(music_root, db)
+	add_songs(music_root, db, verbose)
 	return db
 
 def load(path):
@@ -41,7 +41,7 @@ def load(path):
 	except sqlite3.OperationalError, e:
 		raise RuntimeError("Can't open file at %r: %s" % (path,e))
 
-def add_songs(music_root, db):
+def add_songs(music_root, db, verbose):
 	for path, dirs, files in os.walk(music_root):
 		for file in files:
 			filepath = os.path.join(path, file)
@@ -57,6 +57,8 @@ def add_songs(music_root, db):
 			mtime = filestat.st_mtime
 			standard_fields = [unicode(filepath, 'UTF-8'), song.artist, song.title, ctime, mtime]
 			data = tuple(standard_fields + song.values.values())
+			if verbose:
+				print >> sys.stderr, "File %s has values: %s" % (filepath, song.values)
 			placeholders = ", ".join(["?" for v in data])
 			sql = "insert into songs values (%s)" % (placeholders,)
 			db.execute(sql, data)

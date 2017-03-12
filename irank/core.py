@@ -56,10 +56,10 @@ class MutagenSong(BaseSong):
 	DEFAULT_COMMENT = u''
 	DEFAULT_LANG='eng'
 	DEFAULT_LANG='eng'
-	COMMENT_KEY = u"COMM::'%s'" % (DEFAULT_LANG,)
+	COMMENT_KEY = u"COMM::%s" % (DEFAULT_LANG,)
 	FALLBACK_KEYS = [
-		u"COMM::'XXX'",
-		u"COMM:c0:'XXX'",
+		u"COMM::XXX",
+		u"COMM:c0:XXX",
 	]
 	
 	@staticmethod
