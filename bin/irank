@@ -14,8 +14,14 @@ if not args:
 
 import irank
 irank_path = os.path.abspath(os.path.dirname(os.path.dirname(irank.__file__)))
-path = os.environ.get('PYTHONPATH', None)
-os.environ['PYTHONPATH'] = os.pathsep.join([irank_path, path]) if path else irank_path
+
+def prefix(var, path):
+	current = os.environ.get(var, None)
+	os.environ[var] = os.pathsep.join([path, current]) if current else path
+
+# make sure sub-python processes get the same python and modules
+prefix('PYTHONPATH', irank_path)
+prefix('PATH', os.path.dirname(sys.executable))
 
 args[0] = "irank-%s" % args[0]
 os.execvp(args[0], args)
