@@ -23,5 +23,10 @@ def prefix(var, path):
 prefix('PYTHONPATH', irank_path)
 prefix('PATH', os.path.dirname(sys.executable))
 
-args[0] = "irank-%s" % args[0]
+action = args[0]
+if os.path.isabs(action):
+	# development aid; execute a nonlocal action
+	pass
+else:
+	args[0] = "irank-%s" % action
 os.execvp(args[0], args)

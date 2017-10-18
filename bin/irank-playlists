@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 
 import sqlite3
 import os
@@ -8,78 +9,188 @@ import shutil
 import optparse
 import yaml
 import traceback
+import errno
 
 import irank
 from irank.core import fsenc
 from irank.config import config_file, realpath, IrankOptionParser, IrankApp
 from irank.db import populate_db, load as load_db
+import logging
 
 VERBOSE = False
 LINK_FN = os.link
+DRY_RUN = False
 
-def ensure_no_real_files_exist(location):
-	for path, dirs, files in os.walk(location):
-		not_links = [os.path.join(path, file) for file in files if not os.path.islink(os.path.join(path, file))]
-		if len(not_links) > 0:
-			raise RuntimeError("The following files are not symbolic links: %s" % (
-				"\n".join(not_links),))
+def skippable_action(desc, fn):
+	def wrapped(*args):
+		if DRY_RUN:
+			print("+ %s(%s)" % (desc,', '.join(list(args))))
+		else:
+			return fn(*args)
+	return wrapped
 
-def clear_dir(location, exclude=[]):
-	assert "irank" in location # hack to make me feel more secure that I won't be deleting my entire music library
-	#ensure_no_real_files_exist(location)
-	for content in os.listdir(location):
-		if content in exclude: continue
-		full_path = os.path.join(location, content)
-		try:
-			os.remove(full_path)
-		except OSError:
-			shutil.rmtree(full_path)
+unlink = skippable_action('unlink', os.unlink)
+rmdir = skippable_action('rmdir', os.rmdir)
+mkdir = skippable_action('mkdir', os.mkdir)
+symlink = skippable_action('symlink', os.symlink)
+link = skippable_action('link', os.link)
+
+def diff_symlink(src, dest):
+	try:
+		existing_link = os.readlink(dest)
+	except OSError as e:
+		pass
+	else:
+		if existing_link == src:
+			logging.debug("keeping existing link %s -> %s" % (dest, src))
+			return
+
+	logging.debug("creating link at %s" % (dest, src))
+	rm_r(dest)
+	symlink(src, dest)
+
+def diff_hardlink(src, dest):
+	try:
+		if os.path.samefile(src, dest):
+			logging.debug("keeping existing link %s -> %s" % (dest, src))
+			return
+	except OSError as e:
+		pass
+	rm_r(dest)
+	link(src, dest)
+
+def rm_r(path):
+	try:
+		unlink(path)
+	except OSError as e:
+		if e.errno == errno.ENOENT:
+			pass
+		elif e.errno == errno.EISDIR:
+			shutil.rmtree(path)
+		else:
+			raise
+
+class DirCache(object):
+	def __init__(self):
+		self.dirs = set()
+		self.files = set()
+
+	def add_dir(self, name):
+		self.dirs.add(name)
+
+	def add_file(self, name):
+		self.files.add(name)
+
+class Output(object):
+	def __init__(self, root_dir):
+		self.expected = DirCache()
+		self.extant = DirCache()
+		self.root = root_dir
+	
+	def setup(self):
+		if os.path.isdir(self.root):
+			self._populate_existing_paths()
+		else:
+			mkdir(self.root)
+
+	def _populate_existing_paths(self):
+		for path, dirnames, filenames in os.walk(self.root):
+			path = path[len(self.root):].lstrip(os.path.sep)
+			for dirname in dirnames:
+				self.extant.add_dir(os.path.join(path, dirname).decode(fsenc))
+			for filename in filenames:
+				self.extant.add_file(os.path.join(path, filename).decode(fsenc))
+		logging.debug("scanned existing: %d dirs and %d files" % (
+			len(self.extant.dirs),
+			len(self.extant.files)
+		))
+
+	def fullpath(self, p):
+		return os.path.join(self.root, p)
+
+	def mkdir(self, path):
+		if path not in self.extant.dirs:
+			if path in self.extant.files:
+				# it _was_ a file, now it's a dir
+				unlink(self.fullpath(path))
+			mkdir(self.fullpath(path))
+		self.expected.add_dir(path)
+	
+	def keep(self, path):
+		self.expected.add_file(path)
+		return self.fullpath(path)
+
+	def cleanup(self):
+		unwanted_files = self.extant.files.difference(self.expected.files, self.expected.dirs)
+		logging.debug("before generation, found %s dirs and %s files" % (
+			len(self.extant.dirs),
+			len(self.extant.files)
+		))
+		logging.debug("generation produced %s dirs and %s files" % (
+			len(self.expected.dirs),
+			len(self.expected.files)
+		))
+		logging.debug(" - found %d unwanted files" % (len(unwanted_files)))
+
+		# for extant, wanted in zip(sorted(self.extant.files), sorted(self.expected.files)):
+		# 	print("%r -- %r" % (extant, wanted))
+		for filename in sorted(unwanted_files):
+			unlink(self.fullpath(filename))
+		for dirname in sorted(self.extant.dirs):
+			dirpath = self.fullpath(dirname)
+			# after clearing out files, remove all extant dirs which are empty
+			# and which we didn't explicitly `mkdir` on
+			if len(os.listdir(dirpath)) == 0:
+				rmdir(dirpath)
 
 def run(input_file, music_root, playlist_root, db_path, use_existing_db):
-	if os.path.isdir(playlist_root):
-		clear_dir(playlist_root, exclude=os.path.basename(db_path))
-	else:
-		os.mkdir(playlist_root)
-
-	if use_existing_db:
+	if use_existing_db or DRY_RUN:
 		db = load_db(db_path)
 	else:
-		print "Populating database.."
+		print("Populating database..")
 		db = populate_db(music_root, db_path = db_path)
 
 	playlist_defs = list(yaml.safe_load_all(open(input_file)))[0]
-	print '-' * 80
-	print
-	create_playlists(playlist_defs, db, playlist_root)
+	print('-' * 80)
+	print()
 
-def create_playlists(rules, db, dest_dir):
+	output = Output(playlist_root)
+	output.setup()
+	output.keep(os.path.relpath(db_path, output.root))
+	create_playlists(output, playlist_defs, db)
+	output.cleanup()
+
+def create_playlists(output, rules, db):
 	for name, condition in rules.items():
-		create_playlist(name, condition, db, dest_dir)
-	print "created %s playlists" % (len(rules),)
+		create_playlist(output, name, condition, db)
+	print("created %s playlists" % (len(rules),))
 
-def create_playlist(name, condition, db, dest_dir):
-	print "creating playlist: %s" % (name,)
-	output_folder = os.path.join(dest_dir, name)
-	os.mkdir(output_folder)
-	with open(os.path.join(dest_dir, name + '.m3u'), 'w') as output_playlist:
+def create_playlist(output, name, condition, db):
+	print("creating playlist: %s" % (name,))
+	output.mkdir(name)
+	with open(os.path.join(output.keep(name + '.m3u')), 'w') as output_playlist:
 		for filepath, in db.execute('select path from songs where %s' % (condition,)):
 			try:
-				playlist_song_path = os.path.join(output_folder, os.path.basename(filepath))
-				LINK_FN(filepath, playlist_song_path)
-				print >> output_playlist, playlist_song_path.encode(fsenc)
+				playlist_path = os.path.join(name, os.path.basename(filepath))
+				logging.debug("Adding song %s" % (playlist_path))
+				LINK_FN(filepath, output.keep(playlist_path))
+				print(playlist_path.encode(fsenc), file=output_playlist)
 			except (UnicodeEncodeError, OSError), e:
-				print "Error linking file: %r" % (filepath,)
+				print("Error linking file: %r" % (filepath,))
 				traceback.print_exc()
 
 def main():
-	global VERBOSE, LINK_FN, DB_ONLY
+	global VERBOSE, LINK_FN, DB_ONLY, DRY_RUN
 	parser = IrankOptionParser()
 	parser.add_option('-s', '--symlink', action='store_true')
 	parser.add_option('--db-only', action='store_true', default=False, help='generate db only - no playlists')
 	parser.add_option('-q', '--use-existing-db', action='store_true', default=False, help='use existing DB')
+	parser.add_option('-n', '--dry-run', action='store_true', default=False, help='dry run (just print actions)')
 	options, args = parser.parse_args()
 	VERBOSE = options.verbose
-	LINK_FN = os.symlink if options.symlink else os.link
+	DRY_RUN = options.dry_run
+	logging.basicConfig(level = logging.DEBUG if VERBOSE else logging.INFO)
+	LINK_FN = diff_symlink if options.symlink else diff_hardlink
 
 	def usage():
 		raise ValueError(parser.format_help())
