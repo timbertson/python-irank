@@ -15,7 +15,6 @@ setup(
 	},
 	data_files = [
 		('libexec/irank', ['libexec/irank/mpris-display']),
-		('', ['libexec/irank/mpris-display']),
 	],
 	install_requires=[
 		'setuptools',
