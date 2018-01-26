@@ -64,12 +64,12 @@ def main():
 					raise
 				print >> sys.stderr, "Error syncing: %s\n" % (e,)
 				while True:
-					print >> sys.stderr, "Press Ctrl-C to abort, 'r' to restart, <return> to retry (skipping existing files) and 's' to skip to next step"
+					print >> sys.stderr, "Press Ctrl-C to abort, <return> to restart, 'k' to retry (skipping existing files) and 's' to skip to next step"
 					result = raw_input().strip().lower()
-					if result == '':
+					if result == 'k':
 						extra_sync_opts = ['--ignore-existing']
 						break
-					elif result == 'r':
+					elif result == '':
 						extra_sync_opts = []
 						break
 					elif result == 's':
