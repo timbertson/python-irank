@@ -43,16 +43,23 @@ class Editor(object):
 		y_start = 2
 		margin = 1
 		i = 0
-		key_len = 15
 		for key, rating in self.song.values.formatted_pairs():
 			if self.selected_line == i:
 				attr = curses.A_REVERSE
 			else:
 				attr = 0
-			self.scr.insstr(i + y_start, indent, key, A_KEY | attr)
-			self.scr.insstr(i + y_start, indent + margin + len(key), rating, A_STAR | attr)
+			
+			# Fun bug with curses+tilda; multiple spaces get collapsed into a single
+			# space if there are between 7 and 13 of them, inclusive.
+			# Less than 7 spaces works fine, and 14 or more work fine too.
+			# Life is too short to figure out why.
+			strippped = key.strip()
+			num_spaces = len(key) - len(strippped)
+			self.scr.insstr(i + y_start, indent+num_spaces, strippped, A_KEY | attr)
+			# self.scr.insstr(i + y_start, indent, key, A_KEY | attr)
+			self.scr.insstr(i + y_start, indent + len(key) + margin, rating, A_STAR | attr)
+
 			i += 1
-		self.scr.move(self.selected_line + y_start, 0 + indent)
 
 
 	def main(self, scr):
@@ -100,7 +107,7 @@ class Editor(object):
 	def init_colors(self):
 		global A_STAR, A_KEY, A_FILENAME
 		curses.use_default_colors()
-		curses.curs_set(2) # hide cursor
+		curses.curs_set(0) # hide cursor
 
 		n_star = 1
 		n_key = 2
