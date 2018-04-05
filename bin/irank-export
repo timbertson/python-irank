@@ -14,6 +14,7 @@ def main():
 	p = IrankOptionParser('%prog -d DEST playlist_name [playlist_name ...]')
 	p.add_option('-d', '--dest', help='export destination', default=None)
 	p.add_option('-l', '--limit', type="int", help='per-playlist filesize limit', default=None)
+	p.add_option('--no-checksum', dest='checksum', action="store_false", default=True)
 	p.add_option('-i', '--interactive', action='store_true', help='Interactively resolve errors')
 	p.add_option('--rsync-opt', dest='rsync_opts', action='append', default=[], help='Add rsync option (can be used multiple times)')
 	opts, args = p.parse_args()
@@ -48,7 +49,7 @@ def main():
 			all_songs.update(playlist_songs)
 			write_m3u(export_temp, playlist, sorted(playlist_songs))
 			print "Generated playlist %s: %s files" % (playlist, len(playlist_songs))
-		
+
 		print "linking into %r ..." % (export_temp,)
 		total_size = link_all_files(all_songs, export_temp=export_temp, music_base=music_base, limit=opts.limit)
 
@@ -57,7 +58,7 @@ def main():
 		syncing = True
 		while syncing:
 			try:
-				sync(export_temp, export_music, additional_opts=opts.rsync_opts + extra_sync_opts)
+				sync(export_temp, export_music, additional_opts=opts.rsync_opts + extra_sync_opts, checksum=opts.checksum)
 				break
 			except (subprocess.CalledProcessError, OSError) as e:
 				if not opts.interactive:
@@ -107,15 +108,18 @@ def link_all_files(all_songs, export_temp, music_base, limit=None):
 		os.link(src_file, link_dest)
 	return total_size
 
-def sync(src, dest, additional_opts=[]):
+def sync(src, dest, additional_opts=[], checksum=True):
 	cmd = [
 		'rsync',
 		#'-n',
 		'--progress',
+		'--modify-window=5',
 		'-r',
-		'-c',
 		#'-v',
-		'--delete-before'] + additional_opts + [src + os.path.sep, dest]
+		'--delete-before']
+	if checksum:
+		cmd.append('-c')
+	cmd = cmd + additional_opts + [src + os.path.sep, dest]
 	print "running: %r" % (cmd,)
 	subprocess.check_call(cmd, stdin=subprocess.PIPE)
 
