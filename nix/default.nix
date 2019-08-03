@@ -5,7 +5,7 @@ let
 	pythonpath = lib.concatStringsSep ":" (map (dep: "${dep}/${libSuffix}") pythonDeps);
 in
 pythonPackages.buildPythonPackage {
-	src = ./local.tgz;
+	src = null;
 	name = "irank";
 	propagatedBuildInputs = pythonDeps;
 	fixupPhase =
