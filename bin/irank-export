@@ -5,18 +5,22 @@ import shutil
 import math
 import sys
 import subprocess
+import time
+import random
 
 from irank.config import IrankOptionParser, IrankApp
 from irank import db as irank_db
 STATUS = 0
+BYTES_PER_GB = 1024 * 1024 * 1024
 
 def main():
 	p = IrankOptionParser('%prog -d DEST playlist_name [playlist_name ...]')
 	p.add_option('-d', '--dest', help='export destination', default=None)
-	p.add_option('-l', '--limit', type="int", help='per-playlist filesize limit', default=None)
+	p.add_option('-l', '--limit', type="float", help='per-playlist filesize limit (GB)', default=None)
 	p.add_option('--no-checksum', dest='checksum', action="store_false", default=True)
 	p.add_option('-i', '--interactive', action='store_true', help='Interactively resolve errors')
 	p.add_option('--rsync-opt', dest='rsync_opts', action='append', default=[], help='Add rsync option (can be used multiple times)')
+	p.add_option('--merge', action='append', default=[], help='Merge in an additional folder')
 	opts, args = p.parse_args()
 	assert opts.dest, p.get_usage()
 	assert len(args) > 0, p.get_usage()
@@ -44,16 +48,25 @@ def main():
 
 	try:
 		for playlist in args:
-			playlist_songs = set(app.songs_for(playlist, relative=True))
+			playlist_songs = app.songs_for(playlist, relative=True)
+			playlist_songs, playlist_bytes = apply_limit(music_base, playlist_songs, limit=opts.limit)
 			songs[playlist] = playlist_songs
 			all_songs.update(playlist_songs)
 			write_m3u(export_temp, playlist, sorted(playlist_songs))
-			print "Generated playlist %s: %s files" % (playlist, len(playlist_songs))
+			print "Generated playlist %s: %s files (%0.2fgb)" % (playlist, len(playlist_songs), playlist_bytes / float(BYTES_PER_GB))
 
 		print "linking into %r ..." % (export_temp,)
-		total_size = link_all_files(all_songs, export_temp=export_temp, music_base=music_base, limit=opts.limit)
+		link_all_files(all_songs, export_temp=export_temp, music_base=music_base)
 
-		print "Syncing %s files (%0.2fgb)" % (len(all_songs),total_size / (math.pow(1000, 3)))
+		for merge in opts.merge:
+			print "merging files from %s" % merge
+			for base, dirs, files in os.walk(merge):
+				for f in files:
+					full_path = os.path.join(base, f)
+					path_from_merge = os.path.relpath(full_path, merge)
+					link_single_file(merge, export_temp, path_from_merge)
+
+		print "Syncing %s files" % (len(all_songs),)
 		extra_sync_opts = []
 		syncing = True
 		while syncing:
@@ -81,8 +94,9 @@ def main():
 	finally:
 		shutil.rmtree(export_temp)
 
-def link_all_files(all_songs, export_temp, music_base, limit=None):
-	total_size = 0
+def apply_limit(music_base, songs, limit):
+	if limit is not None:
+		limit = limit * BYTES_PER_GB
 	def file_size(path):
 		try:
 			return os.stat(path).st_size
@@ -90,23 +104,37 @@ def link_all_files(all_songs, export_temp, music_base, limit=None):
 			print >> sys.stderr, "couldn't get file size of file: %s" % (path,)
 		return None
 
-	for file in all_songs:
-		#if not os.path.isdir(os.path.dirname(
+	songs = sorted(list(songs))
+	week_no = int(time.time() / (60 * 60 * 24 * 7))
+	random.seed(week_no)
+	random.shuffle(songs)
+	keep = []
+	total_size = 0
+	for file in songs:
 		src_file = os.path.join(music_base, file)
 		src_file_size = file_size(src_file)
 		if src_file_size is None:
 			continue
 		if limit and (total_size + src_file_size) > limit:
-			return total_size
+			print "breaking playlist at %s songs (out of %s)" % (len(keep), len(songs))
+			break
 		else:
+			keep.append(file)
 			total_size += src_file_size
+	return (keep, total_size)
 
-		link_dest = os.path.join(export_temp, file)
-		link_dest_dir = os.path.dirname(link_dest)
-		if not os.path.isdir(link_dest_dir):
-			os.makedirs(link_dest_dir)
-		os.link(src_file, link_dest)
-	return total_size
+def link_all_files(all_songs, export_temp, music_base):
+	for file in all_songs:
+		src_file = os.path.join(music_base, file)
+		link_single_file(music_base, export_temp, file)
+
+def link_single_file(src_base, dest_base, path):
+	src_file = os.path.join(src_base, path)
+	link_dest = os.path.join(dest_base, path)
+	link_dest_dir = os.path.dirname(link_dest)
+	if not os.path.isdir(link_dest_dir):
+		os.makedirs(link_dest_dir)
+	os.link(src_file, link_dest)
 
 def sync(src, dest, additional_opts=[], checksum=True):
 	cmd = [
