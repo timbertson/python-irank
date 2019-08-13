@@ -60,7 +60,9 @@ def main():
 
 		for merge in opts.merge:
 			print "merging files from %s" % merge
-			for base, dirs, files in os.walk(merge):
+			def rethrow(e):
+				raise e
+			for base, dirs, files in os.walk(merge, onerror=rethrow):
 				for f in files:
 					full_path = os.path.join(base, f)
 					path_from_merge = os.path.relpath(full_path, merge)

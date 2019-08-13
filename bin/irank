@@ -12,7 +12,8 @@ if not args:
 	print('\n'.join(cmds), file=sys.stderr)
 	sys.exit(1)
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+bin_path = os.path.dirname(__file__)
+sys.path.insert(0, os.path.dirname(bin_path))
 import irank
 irank_path = os.path.abspath(os.path.dirname(os.path.dirname(irank.__file__)))
 
@@ -23,7 +24,7 @@ def prefix(var, path):
 # make sure sub-python processes get the same python and modules
 prefix('PYTHONPATH', irank_path)
 prefix('PATH', os.path.dirname(sys.executable))
-prefix('PATH', os.path.join(irank_path, 'bin'))
+prefix('PATH', bin_path)
 
 action = args[0]
 if os.path.isabs(action):
