@@ -15,7 +15,7 @@ if __name__ == '__main__':
 		if val is not None:
 			modifications[k] = val
 
-	assert len(modifications) > 0
+	assert (len(modifications) > 0 or opts.force)
 	if not opts.force:
 		print >> sys.stderr, "Applying modifications: %s to %s files\n\nOK [Y/n]? " % (modifications,len(files))
 		if raw_input().strip().lower() not in ('', 'y', 'yes'): sys.exit(1)

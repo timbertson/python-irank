@@ -2,8 +2,11 @@
 
 import os, sys
 import irank
+from irank import config
 
-for f in sys.argv[1:]:
+(_opts, args) = config.IrankOptionParser().parse_args()
+
+for f in args:
 	song = irank.Song(f)
 	name = os.path.splitext(os.path.basename(f))[0]
 	print "%-60s  |%s" % (name[:55], song.values.format_line())

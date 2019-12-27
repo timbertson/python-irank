@@ -1,4 +1,4 @@
-import re, sys
+import re, sys, logging
 import db
 
 irank_marker = re.compile("\\[([^]=]+)=([0-5])\\]")
@@ -56,8 +56,9 @@ class MutagenSong(BaseSong):
 	DEFAULT_COMMENT = u''
 	DEFAULT_LANG='eng'
 	DEFAULT_LANG='eng'
-	COMMENT_KEY = u"COMM::%s" % (DEFAULT_LANG,)
-	FALLBACK_KEYS = [
+	POSSIBLE_KEYS = [
+		u"COMM::%s" % (DEFAULT_LANG,),
+		u"COMM:Comment:XXX",
 		u"COMM::XXX",
 		u"COMM:c0:XXX",
 	]
@@ -83,19 +84,27 @@ class MutagenSong(BaseSong):
 
 	def _get_comment(self):
 		# debugging...
-		self._possible_comments = list(filter(lambda item: item[0].startswith('COMM:'), self.file.items()))
+		# logging.debug('posible comments: %s', '\n'.join(map(repr, list(filter(lambda item: item[0].startswith('COMM:'), self.file.items())))))
 		comment = None
-		for key in [self.COMMENT_KEY] + self.FALLBACK_KEYS:
-			comment = self.file.get(key, None)
-			if comment is not None:
-				break
+		self._comment_keys = []
+		for key in self.POSSIBLE_KEYS:
+			value = self.file.get(key, None)
+			if value is not None:
+				self._comment_keys.append(key)
+				if comment is None:
+					comment = value
+				else:
+					logging.warn("found secondary comment %r: %r", key, value)
 		if comment is None:
+			self._comment_keys = [self.POSSIBLE_KEYS[0]]
 			comment = self._make_comment(self.DEFAULT_COMMENT)
+		logging.debug('comment keys = %r, comment = %r', self._comment_keys, comment)
 		return self._tag_value(comment)
 	
 	def _set_comment(self, comment):
 		#self._comment.text = [unicode(comment)]
-		self.file[self.COMMENT_KEY] = self._make_comment(comment)
+		for key in self._comment_keys:
+			self.file[key] = self._make_comment(comment)
 	
 	def _get_artist(self):
 		tag = self.file.get('TPE1')

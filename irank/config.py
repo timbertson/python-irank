@@ -1,5 +1,5 @@
 from optparse import OptionParser
-import os, sys
+import os, sys, logging
 import yaml
 
 def realpath(p):
@@ -26,6 +26,8 @@ class IrankOptionParser(OptionParser):
 			try:
 				setattr(opts, path_attr, os.path.expanduser(getattr(opts, path_attr)))
 			except AttributeError: pass
+		level = logging.DEBUG if opts.verbose else logging.INFO
+		logging.basicConfig(stream=sys.stderr, level=level, format="%(message)s")
 		return (opts, args)
 	
 	def __default(self, name):

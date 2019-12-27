@@ -17,7 +17,6 @@ from irank.config import config_file, realpath, IrankOptionParser, IrankApp
 from irank.db import populate_db, load as load_db
 import logging
 
-VERBOSE = False
 LINK_FN = os.link
 DRY_RUN = False
 
@@ -180,16 +179,14 @@ def create_playlist(output, name, condition, db):
 				traceback.print_exc()
 
 def main():
-	global VERBOSE, LINK_FN, DB_ONLY, DRY_RUN
+	global LINK_FN, DB_ONLY, DRY_RUN
 	parser = IrankOptionParser()
 	parser.add_option('-s', '--symlink', action='store_true')
 	parser.add_option('--db-only', action='store_true', default=False, help='generate db only - no playlists')
 	parser.add_option('-q', '--use-existing-db', action='store_true', default=False, help='use existing DB')
 	parser.add_option('-n', '--dry-run', action='store_true', default=False, help='dry run (just print actions)')
 	options, args = parser.parse_args()
-	VERBOSE = options.verbose
 	DRY_RUN = options.dry_run
-	logging.basicConfig(level = logging.DEBUG if VERBOSE else logging.INFO)
 	LINK_FN = diff_symlink if options.symlink else diff_hardlink
 
 	def usage():
