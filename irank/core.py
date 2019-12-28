@@ -85,26 +85,23 @@ class MutagenSong(BaseSong):
 	def _get_comment(self):
 		# debugging...
 		# logging.debug('posible comments: %s', '\n'.join(map(repr, list(filter(lambda item: item[0].startswith('COMM:'), self.file.items())))))
-		comment = None
+		comment = u''
 		self._comment_keys = []
 		for key in self.POSSIBLE_KEYS:
-			value = self.file.get(key, None)
-			if value is not None:
+			tag = self.file.get(key, None)
+			if tag is not None:
+				comment += self._tag_value(tag)
 				self._comment_keys.append(key)
-				if comment is None:
-					comment = value
-				else:
-					logging.warn("found secondary comment %r: %r", key, value)
-		if comment is None:
-			self._comment_keys = [self.POSSIBLE_KEYS[0]]
-			comment = self._make_comment(self.DEFAULT_COMMENT)
 		logging.debug('comment keys = %r, comment = %r', self._comment_keys, comment)
 		return self._tag_value(comment)
 	
 	def _set_comment(self, comment):
-		#self._comment.text = [unicode(comment)]
-		for key in self._comment_keys:
-			self.file[key] = self._make_comment(comment)
+		comment_keys = self._comment_keys or self.POSSIBLE_KEYS[:1]
+		primary_key = comment_keys[0]
+		secondary_keys = comment_keys[1:]
+		self.file[primary_key] = self._make_comment(comment)
+		for key in secondary_keys:
+			del self.file[key]
 	
 	def _get_artist(self):
 		tag = self.file.get('TPE1')
