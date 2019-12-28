@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sqlite3
 import logging
@@ -15,19 +15,19 @@ opts = None
 def load_db(path):
 	db = sqlite3.connect(path)
 	errors = 0
-	column_names = map(irank.db.sanitise_column_name, irank.KEYS)
+	column_names = list(map(irank.db.sanitise_column_name, irank.KEYS))
 	keys = ", ".join(column_names)
 	try:
 		conditions = ["s.%s = u.%s" % (col, col) for col in column_names]
 		conditions = " and ".join(conditions)
-		if opts.verbose: print conditions
+		if opts.verbose: print(conditions)
 		db.execute("delete from updates where path in (select s.path from songs s, updates u where s.path = u.path and " + conditions + " )")
 	finally:
 		db.commit()
 	try:
 		updates = db.execute("select path, " + keys + " from updates;")
 		if(opts.count):
-			print len(list(updates))
+			print(len(list(updates)))
 			return
 		for update in updates:
 			logging.debug("fetched row: " + repr(update))
@@ -45,14 +45,14 @@ def load_db(path):
 					song.values[key] = value
 					song.save()
 				db.execute("delete from updates where path = ?", (path,))
-			except StandardError, e:
+			except Exception as e:
 				if opts.verbose: raise
 				errors += 1
-				print >> sys.stderr, "Error processing update to %s:\n    %s: %s" % ( filename, type(e).__name__, e,)
+				print("Error processing update to %s:\n    %s: %s" % ( filename, type(e).__name__, e,), file=sys.stderr)
 		if(errors > 0):
-			print >> sys.stderr, "-------------------"
+			print("-------------------", file=sys.stderr)
 			if not opts.no:
-				if opts.yes or (raw_input("Errors occurred. delete everything anyway? [y/N] ").lower() in ('','y','yes')):
+				if opts.yes or (input("Errors occurred. delete everything anyway? [y/N] ").lower() in ('','y','yes')):
 					logging.info("removing all diff entries")
 					db.execute("delete from updates;")
 					return 0

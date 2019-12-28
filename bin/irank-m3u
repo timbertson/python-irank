@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import os, sys
 from irank.config import IrankOptionParser
 
@@ -14,7 +14,7 @@ def main(base, name, *directories):
 			isfile = lambda p: os.path.isfile(filepath(p))
 			files = filter(isfile, os.listdir(dirpath))
 			for filename in sorted(files, key=ctime):
-				print >> f, filename
+				print(filename, file=f)
 
 def run():
 	usage = """Usage: %prog [OPTIONS] playlist-name [directoryname [directoryname ...]]

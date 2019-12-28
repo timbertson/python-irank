@@ -1,8 +1,30 @@
-#!/bin/bash
+#!/usr/bin/env python3
 
-exe="$(dirname "$0")/../libexec/irank/mpris-display"
-cd "$(dirname "$0")" || exit 1
-"$exe" display &
-"$exe" edit
+import os, sys, threading, subprocess, logging
+here = os.path.dirname(__file__)
+mpris_display = os.path.join(here, '..', 'libexec', 'irank', 'mpris-display')
+logging.debug(mpris_display)
 
-kill %
+display = subprocess.Popen([sys.executable, mpris_display, 'display'])
+edit = subprocess.Popen([sys.executable, mpris_display, 'edit'])
+procs = [display,edit]
+
+def kill_all_except(proc):
+	for other in procs:
+		if other != proc and other.poll() is None:
+			logging.debug('thread %r killing pid %r', threading.get_ident(), other.pid)
+			other.kill()
+
+def watch(proc):
+	logging.debug('thread %r watching pid %r', threading.get_ident(), proc.pid)
+	while proc.poll() is None:
+		proc.wait()
+		logging.debug('thread %r saw pid %r status: %r', threading.get_ident(), proc.pid, proc.poll())
+		kill_all_except(proc)
+
+try:
+	threading.Thread(target = lambda: watch(display)).start()
+	threading.Thread(target = lambda: watch(edit)).start()
+	logging.debug('main thread %r ending', threading.get_ident())
+except:
+	kill_all_except(None)

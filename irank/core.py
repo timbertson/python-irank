@@ -1,5 +1,5 @@
 import re, sys, logging
-import db
+from irank import db
 
 irank_marker = re.compile("\\[([^]=]+)=([0-5])\\]")
 
@@ -15,17 +15,17 @@ try:
 	with open(os.path.expanduser("~/.config/irank/ratings")) as f:
 		strip = lambda x: x.strip()
 		identity = lambda x: x
-		KEYS = filter(identity, map(strip, f.readlines()))
-except StandardError:
-	print >> sys.stderr, ("Using the default rating keys.\n" +
-	    "You can make your own by writing them one line at a time to ~/.config/irank/ratings")
+		KEYS = list(filter(identity, map(strip, f.readlines())))
+except:
+	print(("Using the default rating keys.\n" +
+	    "You can make your own by writing them one line at a time to ~/.config/irank/ratings"), file=sys.stderr)
 
 class BaseSong(object):
 	def __init__(self, filename):
 		self.filename = filename
 		try:
 			self._open_file(self.filename)
-		except ValueError, e:
+		except ValueError as e:
 			raise ValueError("file %s: %s" % (filename, e))
 		assert self.file, "Failed to load file: %s" % (filename,)
 		self.artist = self._get_artist()
@@ -50,7 +50,7 @@ class BaseSong(object):
 
 	@staticmethod
 	def ErrorClasses():
-		return (StandardError,)
+		return (Exception,)
 
 class MutagenSong(BaseSong):
 	DEFAULT_COMMENT = u''
@@ -66,11 +66,11 @@ class MutagenSong(BaseSong):
 	@staticmethod
 	def ErrorClasses():
 		import mutagen.mp3
-		return (StandardError, mutagen.mp3.error,)
+		return (Exception, mutagen.mp3.error,)
 
 	def _make_comment(self, text):
 		import mutagen
-		return mutagen.id3.COMM(encoding=3, lang=self.DEFAULT_LANG, desc=u'', text=unicode(text))
+		return mutagen.id3.COMM(encoding=3, lang=self.DEFAULT_LANG, desc=u'', text=text)
 
 	def _tag_value(self, tag):
 		if tag is None: return u''
@@ -93,7 +93,7 @@ class MutagenSong(BaseSong):
 				comment += self._tag_value(tag)
 				self._comment_keys.append(key)
 		logging.debug('comment keys = %r, comment = %r', self._comment_keys, comment)
-		return self._tag_value(comment)
+		return comment
 	
 	def _set_comment(self, comment):
 		comment_keys = self._comment_keys or self.POSSIBLE_KEYS[:1]
@@ -175,7 +175,7 @@ class Values(dict):
 		return len(KEYS)
 	
 	def values(self):
-		return map(self.__getitem__, KEYS)
+		return list(map(self.__getitem__, KEYS))
 	
 	def flatten(self):
 		items = ["[%s=%s]" % key_val for key_val in self.items() if key_val[1] > 0]

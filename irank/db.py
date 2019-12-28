@@ -17,7 +17,7 @@ def populate_db(music_root, db_path = None, verbose = False):
 		except OSError: pass
 	db = load(db_path or ':memory:')
 
-	key_cols = map(sanitise_column_name, irank.KEYS)
+	key_cols = list(map(sanitise_column_name, irank.KEYS))
 	songs_definition = ("create table songs (" +
 		"path string PRIMARY KEY," +
 		"artist string," +
@@ -38,7 +38,7 @@ def populate_db(music_root, db_path = None, verbose = False):
 def load(path):
 	try:
 		return sqlite3.connect(path)
-	except sqlite3.OperationalError, e:
+	except sqlite3.OperationalError as e:
 		raise RuntimeError("Can't open file at %r: %s" % (path,e))
 
 def add_songs(music_root, db, verbose):
@@ -48,17 +48,17 @@ def add_songs(music_root, db, verbose):
 			try:
 				song = irank.Song(filepath)
 			except irank.Song.ErrorClasses() as e:
-				print >> sys.stderr, "error processing %s: %s" % (filepath, e)
+				print("error processing %s: %s" % (filepath, e), file=sys.stderr)
 				import time
 				time.sleep(5)
 				continue
 			filestat = os.stat(filepath)
 			ctime = filestat.st_ctime
 			mtime = filestat.st_mtime
-			standard_fields = [unicode(filepath, 'UTF-8'), song.artist, song.title, ctime, mtime]
+			standard_fields = [filepath, song.artist, song.title, ctime, mtime]
 			data = tuple(standard_fields + song.values.values())
 			if verbose:
-				print >> sys.stderr, "File %s has values: %s" % (filepath, song.values)
+				print("File %s has values: %s" % (filepath, song.values), file=sys.stderr)
 			placeholders = ", ".join(["?" for v in data])
 			sql = "insert into songs values (%s)" % (placeholders,)
 			db.execute(sql, data)

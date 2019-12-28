@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-from __future__ import print_function
+#!/usr/bin/env python3
 import os, sys
 
 args = sys.argv[1:]
@@ -23,6 +22,7 @@ def prefix(var, path):
 
 # make sure sub-python processes get the same python and modules
 prefix('PYTHONPATH', irank_path)
+prefix('PYTHONEXE', sys.executable)
 prefix('PATH', os.path.dirname(sys.executable))
 prefix('PATH', bin_path)
 

@@ -1,10 +1,10 @@
-{ lib, pythonPackages, gnome3 }:
+{ lib, python3Packages, gnome3 }:
 let
-	pythonDeps = with pythonPackages; [ mutagen pyyaml dbus-python pygobject2 ];
-	libSuffix = "lib/${pythonPackages.python.libPrefix}/site-packages";
+	pythonDeps = with python3Packages; [ mutagen pyyaml dbus-python pygobject2 ];
+	libSuffix = "lib/${python3Packages.python.libPrefix}/site-packages";
 	pythonpath = lib.concatStringsSep ":" (map (dep: "${dep}/${libSuffix}") pythonDeps);
 in
-pythonPackages.buildPythonPackage {
+python3Packages.buildPythonPackage {
 	src = null;
 	name = "irank";
 	propagatedBuildInputs = pythonDeps;

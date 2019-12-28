@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import sys
 import irank
 import optparse
@@ -17,8 +17,8 @@ if __name__ == '__main__':
 
 	assert (len(modifications) > 0 or opts.force)
 	if not opts.force:
-		print >> sys.stderr, "Applying modifications: %s to %s files\n\nOK [Y/n]? " % (modifications,len(files))
-		if raw_input().strip().lower() not in ('', 'y', 'yes'): sys.exit(1)
+		print("Applying modifications: %s to %s files\n\nOK [Y/n]? " % (modifications,len(files)), file=sys.stderr)
+		if input().strip().lower() not in ('', 'y', 'yes'): sys.exit(1)
 
 	for file in files:
 		song = irank.Song(file)

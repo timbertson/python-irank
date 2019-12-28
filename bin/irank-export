@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import os
 import tempfile
 import shutil
@@ -53,13 +53,13 @@ def main():
 			songs[playlist] = playlist_songs
 			all_songs.update(playlist_songs)
 			write_m3u(export_temp, playlist, sorted(playlist_songs))
-			print "Generated playlist %s: %s files (%0.2fgb)" % (playlist, len(playlist_songs), playlist_bytes / float(BYTES_PER_GB))
+			print("Generated playlist %s: %s files (%0.2fgb)" % (playlist, len(playlist_songs), playlist_bytes / float(BYTES_PER_GB)))
 
-		print "linking into %r ..." % (export_temp,)
+		print("linking into %r ..." % (export_temp,))
 		link_all_files(all_songs, export_temp=export_temp, music_base=music_base)
 
 		for merge in opts.merge:
-			print "merging files from %s" % merge
+			print("merging files from %s" % merge)
 			def rethrow(e):
 				raise e
 			for base, dirs, files in os.walk(merge, onerror=rethrow):
@@ -68,7 +68,7 @@ def main():
 					path_from_merge = os.path.relpath(full_path, merge)
 					link_single_file(merge, export_temp, path_from_merge)
 
-		print "Syncing %s files" % (len(all_songs),)
+		print("Syncing %s files" % (len(all_songs),))
 		extra_sync_opts = []
 		syncing = True
 		while syncing:
@@ -78,10 +78,10 @@ def main():
 			except (subprocess.CalledProcessError, OSError) as e:
 				if not opts.interactive:
 					raise
-				print >> sys.stderr, "Error syncing: %s\n" % (e,)
+				print("Error syncing: %s\n" % (e,), file=sys.stderr)
 				while True:
-					print >> sys.stderr, "Press Ctrl-C to abort, <return> to restart, 'k' to retry (skipping existing files) and 's' to skip to next step"
-					result = raw_input().strip().lower()
+					print("Press Ctrl-C to abort, <return> to restart, 'k' to retry (skipping existing files) and 's' to skip to next step", file=sys.stderr)
+					result = input().strip().lower()
 					if result == 'k':
 						extra_sync_opts = ['--ignore-existing']
 						break
@@ -92,7 +92,7 @@ def main():
 						syncing = False
 						break
 					else:
-						print >> sys.stderr, "Eh?"
+						print("Eh?", file=sys.stderr)
 	finally:
 		shutil.rmtree(export_temp)
 
@@ -103,7 +103,7 @@ def apply_limit(music_base, songs, limit):
 		try:
 			return os.stat(path).st_size
 		except OSError:
-			print >> sys.stderr, "couldn't get file size of file: %s" % (path,)
+			print("couldn't get file size of file: %s" % (path,), file=sys.stderr)
 		return None
 
 	songs = sorted(list(songs))
@@ -118,7 +118,7 @@ def apply_limit(music_base, songs, limit):
 		if src_file_size is None:
 			continue
 		if limit and (total_size + src_file_size) > limit:
-			print "breaking playlist at %s songs (out of %s)" % (len(keep), len(songs))
+			print("breaking playlist at %s songs (out of %s)" % (len(keep), len(songs)), file=sys.stderr)
 			break
 		else:
 			keep.append(file)
@@ -150,7 +150,7 @@ def sync(src, dest, additional_opts=[], checksum=True):
 	if checksum:
 		cmd.append('-c')
 	cmd = cmd + additional_opts + [src + os.path.sep, dest]
-	print "running: %r" % (cmd,)
+	print("running: %r" % (cmd,))
 	subprocess.check_call(cmd, stdin=subprocess.PIPE)
 
 def write_m3u(dest, name, files):
@@ -159,9 +159,9 @@ def write_m3u(dest, name, files):
 	with open(os.path.join(dest, name + '.m3u'), 'w') as output:
 		for name in files:
 			try:
-				print >> output, name.encode(encoding)
+				print(name.encode(encoding), file=output)
 			except (UnicodeEncodeError, UnicodeDecodeError) as err:
-				print "FAILED to write song: %r" % (name,)
+				print("FAILED to write song: %r" % (name,))
 				STATUS = 1
 
 if __name__ == '__main__':

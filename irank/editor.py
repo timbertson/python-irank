@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import re
 import os
@@ -39,28 +39,28 @@ def init_rl():
 
 def main(*songs):
 	for song in songs:
-		print song
+		print(song)
 		song = irank.Song(song)
-		print '-' * 30
+		print('-' * 30)
 		init_rl()
 
 		if LIST_MODE:
-			print song.values
+			print(song.values)
 			return
 
 		modified = modify_ratings(song.values)
 		if modified:
-			print song.values.flatten()
+			print(song.values.flatten())
 			song.save()
 
 def modify_ratings(values):
 	changed = False
 	try:
 		while True:
-			print
-			print values
-			print
-			key = raw_input("change: ").strip()
+			print()
+			print(values)
+			print()
+			key = input("change: ").strip()
 			if not key: break
 			key_parts = key.split()
 			value = None
@@ -68,19 +68,19 @@ def modify_ratings(values):
 				value = key_parts.pop(-1)
 				key = " ".join(key_parts)
 			if not key in irank.KEYS:
-				print "invalid key!"
+				print("invalid key!")
 				continue
 			while True:
 				try:
 					if value is None:
-						value = raw_input("   1-5: ").strip()
+						value = input("   1-5: ").strip()
 						if not value: break
 					value = int(value)
 					if value < 0 or value > 5:
 						raise ValueError("must be between 1 and 5")
-				except ValueError, e:
+				except ValueError as e:
 					value = None
-					print e
+					print(e)
 					continue
 				values[key] = value
 				changed = True

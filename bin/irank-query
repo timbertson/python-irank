@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os, sys, sqlite3
 from irank.config import IrankOptionParser, realpath
@@ -7,7 +7,7 @@ def run(path, conditions):
 	db = sqlite3.connect(path)
 	try:
 		for result in db.execute("select path from songs where " + conditions):
-			print result[0]
+			print(result[0])
 	finally:
 		db.commit()
 

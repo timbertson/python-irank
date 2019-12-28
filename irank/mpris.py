@@ -1,9 +1,8 @@
-#!/usr/bin/env python
-from __future__ import print_function
+#!/usr/bin/env python3
 import os, sys, re, time, dbus, gobject
-import urllib2 as parse
+from urllib import parse
 
-from .core import fsenc
+from irank.core import fsenc
 
 METADATA = 'Metadata'
 URL_PROPERTY = 'xesam:url'
