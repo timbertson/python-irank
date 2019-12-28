@@ -90,20 +90,10 @@ class Player(object):
 		return max(names, key=score)
 
 def _path(uri):
-	# gobject gives us a unicode URL, which is cool.
-	# But python2 decodes this into a _unicode_ string with _utf8_
-	# byte sequences, like a right loon.
-	#
-	# However, if we give python a str (bytes) instead, it spits out a
-	# str with those same utf-8 bytes, which will do. This may still be broken
-	# if your FS uses something other than UTF-8, though.
-	uri = uri.encode('ascii')
-	# XXX python3 note: this hack should not be necessary, and will break
-
 	transport, path = parse.splittype(uri)
 	if transport != 'file':
 		raise ValueError("%r type is not 'file'" % (transport,))
-	return parse.unquote(path[2:]).decode('utf-8').encode(fsenc)
+	return parse.unquote(path[2:])
 
 
 if __name__ == '__main__':
