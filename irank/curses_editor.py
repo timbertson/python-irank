@@ -34,7 +34,7 @@ class Editor(object):
 		self.scr.refresh()
 	
 	def draw_filename(self):
-		filename_start = min((self.win_width - len(self.filename)) / 4, 20)
+		filename_start = min((self.win_width - len(self.filename)) // 4, 20)
 		if filename_start < 0: filename_start = 0
 		self.scr.insnstr(0, filename_start, self.filename, self.win_width, A_FILENAME)
 	
