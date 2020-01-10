@@ -38,8 +38,7 @@ def main():
 	export_temp = os.path.join(irank_base, "__export_temp")
 	if os.path.exists(export_temp):
 		shutil.rmtree(export_temp)
-	else:
-		os.makedirs(export_temp)
+	os.makedirs(export_temp)
 	
 	shutil.copy(
 		os.path.join(irank_base, "irank.sqlite"),
