@@ -166,14 +166,14 @@ def create_playlists(output, rules, db):
 def create_playlist(output, name, condition, db):
 	print("creating playlist: %s" % (name,))
 	output.mkdir(name)
-	with open(os.path.join(output.keep(name + '.m3u')), 'w') as output_playlist:
+	with open(os.path.join(output.keep(name + '.m3u')), 'wb') as output_playlist:
 		for filepath, in db.execute('select path from songs where %s' % (condition,)):
 			try:
 				playlist_path = os.path.join(name, os.path.basename(filepath))
 				logging.debug("Adding song %s" % (playlist_path))
 				LINK_FN(filepath, output.keep(playlist_path))
-				print(playlist_path.encode(fsenc), file=output_playlist)
-			except (UnicodeEncodeError, OSError), e:
+				output_playlist.write((playlist_path + '\n').encode(fsenc))
+			except (UnicodeEncodeError, OSError) as e:
 				print("Error linking file: %r" % (filepath,))
 				traceback.print_exc()
 

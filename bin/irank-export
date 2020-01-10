@@ -156,10 +156,10 @@ def sync(src, dest, additional_opts=[], checksum=True):
 def write_m3u(dest, name, files):
 	global STATUS
 	encoding = sys.getfilesystemencoding()
-	with open(os.path.join(dest, name + '.m3u'), 'w') as output:
+	with open(os.path.join(dest, name + '.m3u'), 'wb') as output:
 		for name in files:
 			try:
-				print(name.encode(encoding), file=output)
+				output.write((name + '\n').encode(encoding))
 			except (UnicodeEncodeError, UnicodeDecodeError) as err:
 				print("FAILED to write song: %r" % (name,))
 				STATUS = 1
