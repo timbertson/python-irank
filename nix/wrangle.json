@@ -15,11 +15,9 @@
     },
     "self": {
       "fetch": {
-        "ref": "HEAD",
         "relativePath": "."
       },
       "nix": "default.nix",
-      "ref": "HEAD",
       "relativePath": ".",
       "type": "git-local"
     }

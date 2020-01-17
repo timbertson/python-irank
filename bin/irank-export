@@ -21,9 +21,12 @@ def main():
 	p.add_option('-i', '--interactive', action='store_true', help='Interactively resolve errors')
 	p.add_option('--rsync-opt', dest='rsync_opts', action='append', default=[], help='Add rsync option (can be used multiple times)')
 	p.add_option('--merge', action='append', default=[], help='Merge in an additional folder')
+	p.add_option('--leave-ext', action='append', default=[], help='Don\t remove files with the given extension')
+	p.add_option('--leave-name', action='append', default=[], help='Don\t remove files with the given name')
 	opts, args = p.parse_args()
 	assert opts.dest, p.get_usage()
 	assert len(args) > 0, p.get_usage()
+	opts.do_sync = ':' in opts.dest
 	app = IrankApp(opts)
 
 	music_base = os.path.expanduser(opts.music)
@@ -33,67 +36,107 @@ def main():
 	songs = {}
 	all_songs = set()
 
-	# we use hard-links, so the export_temp must be on the same device as our music!
-	# export_temp = tempfile.mkdtemp(prefix='irank-export-')
-	export_temp = os.path.join(irank_base, "__export_temp")
-	if os.path.exists(export_temp):
-		shutil.rmtree(export_temp)
-	os.makedirs(export_temp)
-	
-	shutil.copy(
-		os.path.join(irank_base, "irank.sqlite"),
-		os.path.join(export_temp, "irank.sqlite")
-	)
+	def should_ignore(filename):
+		_, ext = os.path.splitext(filename)
+		return filename in opts.leave_name or ext[1:] in opts.leave_ext
 
+
+	# we use hard-links, so the export_dest must be on the same device as our music!
+	if opts.do_sync:
+		export_dest = os.path.join(irank_base, "__export_temp")
+		# if we're using a tempdir we can just clean it...
+		if os.path.exists(export_dest):
+			shutil.rmtree(export_dest)
+		unwanted_files = set()
+	else:
+		export_dest = opts.dest
+		unwanted_files = set()
+		if os.path.exists(export_dest):
+			for root, dirs, files in os.walk(export_dest, topdown=True):
+				print("scanning initial contents of: %s" % root)
+				for d in dirs[:]:
+					print("checking dir: %s" % d)
+					if should_ignore(d):
+						print("ignoring directory %s" % d)
+						dirs.remove(d)
+
+				for f in files:
+					if should_ignore(f):
+						print("ignoring file %s" % f)
+						continue
+					unwanted_files.add(os.path.join(root, f))
+		print('overwriting directory with %d existing files' % len(unwanted_files))
+
+	os.makedirs(export_dest, exist_ok=True)
+	
 	try:
 		for playlist in args:
 			playlist_songs = app.songs_for(playlist, relative=True)
 			playlist_songs, playlist_bytes = apply_limit(music_base, playlist_songs, limit=opts.limit)
 			songs[playlist] = playlist_songs
 			all_songs.update(playlist_songs)
-			write_m3u(export_temp, playlist, sorted(playlist_songs))
+			write_m3u(export_dest, playlist, sorted(playlist_songs), unwanted_files=unwanted_files)
 			print("Generated playlist %s: %s files (%0.2fgb)" % (playlist, len(playlist_songs), playlist_bytes / float(BYTES_PER_GB)))
 
-		print("linking into %r ..." % (export_temp,))
-		link_all_files(all_songs, export_temp=export_temp, music_base=music_base)
+		print("linking into %r ..." % (export_dest,))
+		link_all_files(all_songs, export_dest=export_dest, music_base=music_base, unwanted_files=unwanted_files)
 
 		for merge in opts.merge:
 			print("merging files from %s" % merge)
 			def rethrow(e):
 				raise e
-			for base, dirs, files in os.walk(merge, onerror=rethrow):
+			for base, dirs, files in os.walk(merge, onerror=rethrow, topdown=True):
+				for d in dirs[:]:
+					if should_ignore(d):
+						print("not merging directory %s" % d)
+						dirs.remove(d)
 				for f in files:
+					if should_ignore(f):
+						print("not merging file %s" % f)
+						continue
 					full_path = os.path.join(base, f)
 					path_from_merge = os.path.relpath(full_path, merge)
-					link_single_file(merge, export_temp, path_from_merge)
+					link_single_file(merge, export_dest, path_from_merge, unwanted_files=unwanted_files)
 
-		print("Syncing %s files" % (len(all_songs),))
-		extra_sync_opts = []
-		syncing = True
-		while syncing:
-			try:
-				sync(export_temp, export_music, additional_opts=opts.rsync_opts + extra_sync_opts, checksum=opts.checksum)
-				break
-			except (subprocess.CalledProcessError, OSError) as e:
-				if not opts.interactive:
-					raise
-				print("Error syncing: %s\n" % (e,), file=sys.stderr)
-				while True:
-					print("Press Ctrl-C to abort, <return> to restart, 'k' to retry (skipping existing files) and 's' to skip to next step", file=sys.stderr)
-					result = input().strip().lower()
-					if result == 'k':
-						extra_sync_opts = ['--ignore-existing']
-						break
-					elif result == '':
-						extra_sync_opts = []
-						break
-					elif result == 's':
-						syncing = False
-						break
-					else:
-						print("Eh?", file=sys.stderr)
+		print('removing %d unwanted files' % (len(unwanted_files)))
+		for f in unwanted_files:
+			print("removing: %s" % f)
+			os.unlink(f)
+		if len(unwanted_files) > 0:
+			# clean up empty directories
+			for root, dirs, files in os.walk(export_dest, topdown=False):
+				if len(dirs) == 0 and len(files) == 0:
+					os.rmdir(root)
+
+		if opts.do_sync:
+			print("Syncing %s files" % (len(all_songs),))
+			extra_sync_opts = []
+			syncing = True
+			while syncing:
+				try:
+					sync(export_dest, export_music, additional_opts=opts.rsync_opts + extra_sync_opts, checksum=opts.checksum)
+					break
+				except (subprocess.CalledProcessError, OSError) as e:
+					if not opts.interactive:
+						raise
+					print("Error syncing: %s\n" % (e,), file=sys.stderr)
+					while True:
+						print("Press Ctrl-C to abort, <return> to restart, 'k' to retry (skipping existing files) and 's' to skip to next step", file=sys.stderr)
+						result = input().strip().lower()
+						if result == 'k':
+							extra_sync_opts = ['--ignore-existing']
+							break
+						elif result == '':
+							extra_sync_opts = []
+							break
+						elif result == 's':
+							syncing = False
+							break
+						else:
+							print("Eh?", file=sys.stderr)
 	finally:
-		shutil.rmtree(export_temp)
+		if opts.do_sync:
+			shutil.rmtree(export_dest)
 
 def apply_limit(music_base, songs, limit):
 	if limit is not None:
@@ -124,17 +167,19 @@ def apply_limit(music_base, songs, limit):
 			total_size += src_file_size
 	return (keep, total_size)
 
-def link_all_files(all_songs, export_temp, music_base):
+def link_all_files(all_songs, export_dest, music_base, unwanted_files):
 	for file in all_songs:
 		src_file = os.path.join(music_base, file)
-		link_single_file(music_base, export_temp, file)
+		link_single_file(music_base, export_dest, file, unwanted_files=unwanted_files)
 
-def link_single_file(src_base, dest_base, path):
+def link_single_file(src_base, dest_base, path, unwanted_files):
 	src_file = os.path.join(src_base, path)
 	link_dest = os.path.join(dest_base, path)
 	link_dest_dir = os.path.dirname(link_dest)
-	if not os.path.isdir(link_dest_dir):
-		os.makedirs(link_dest_dir)
+	os.makedirs(link_dest_dir, exist_ok=True)
+	if link_dest in unwanted_files:
+		unwanted_files.remove(link_dest)
+		os.unlink(link_dest)
 	os.link(src_file, link_dest)
 
 def sync(src, dest, additional_opts=[], checksum=True):
@@ -152,10 +197,13 @@ def sync(src, dest, additional_opts=[], checksum=True):
 	print("running: %r" % (cmd,))
 	subprocess.check_call(cmd, stdin=subprocess.PIPE)
 
-def write_m3u(dest, name, files):
+def write_m3u(dest, name, files, unwanted_files):
 	global STATUS
+	path = os.path.join(dest, name + '.m3u')
+	if path in unwanted_files:
+		unwanted_files.remove(path)
 	encoding = sys.getfilesystemencoding()
-	with open(os.path.join(dest, name + '.m3u'), 'wb') as output:
+	with open(path, 'wb') as output:
 		for name in files:
 			try:
 				output.write((name + '\n').encode(encoding))

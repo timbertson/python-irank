@@ -9,6 +9,8 @@ if __name__ == '__main__':
 	for k in irank.KEYS:
 		p.add_option('--' + k, default=None, type='int', dest='rating_' + k, help='set ' + k)
 	opts, files = p.parse_args()
+	if len(files) == 0:
+		files = map(lambda line: line.strip("\n"), sys.stdin)
 	modifications = {}
 	for k in irank.KEYS:
 		val = getattr(opts, 'rating_' + k)
@@ -17,7 +19,7 @@ if __name__ == '__main__':
 
 	assert (len(modifications) > 0 or opts.force)
 	if not opts.force:
-		print("Applying modifications: %s to %s files\n\nOK [Y/n]? " % (modifications,len(files)), file=sys.stderr)
+		print("Applying modifications: %s\n\nOK [Y/n]? " % (modifications,), file=sys.stderr)
 		if input().strip().lower() not in ('', 'y', 'yes'): sys.exit(1)
 
 	for file in files:
