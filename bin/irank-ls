@@ -4,9 +4,17 @@ import os, sys
 import irank
 from irank import config
 
-(_opts, args) = config.IrankOptionParser().parse_args()
+p = config.IrankOptionParser()
+p.add_option('-m', '--multiline', action='store_true', default=False)
+(opts, args) = p.parse_args()
 
 for f in args:
 	song = irank.Song(f)
 	name = os.path.splitext(os.path.basename(f))[0]
-	print("%-50s  |%s" % (name[:45], song.values.format_line()))
+	if opts.multiline:
+		print(name)
+		print('-' * len(name))
+		for key, value in song.values.formatted_pairs():
+			print("%s %s" % (key, value))
+	else:
+		print("%-50s  |%s" % (name[:45], song.values.format_line()))
