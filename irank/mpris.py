@@ -60,8 +60,6 @@ class Player(object):
 
 		self.properties.connect_to_signal('PropertiesChanged', playing_uri_changed)
 		cb(self.track)
-		loop = gobject.MainLoop()
-		loop.run()
 	
 	def __repr__(self):
 		return '<mpris.Player (%s)>' % (self.player_name,)

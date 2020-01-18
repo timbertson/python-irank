@@ -13,9 +13,6 @@ setup(
 	package_data = {
 		'irank': ['../VERSION'],
 	},
-	data_files = [
-		('libexec/irank', ['libexec/irank/mpris-display']),
-	],
 	install_requires=[
 		'setuptools',
 		'mutagen',

@@ -1,30 +1,49 @@
 #!/usr/bin/env python3
 
-import os, sys, threading, subprocess, logging
-here = os.path.dirname(__file__)
-mpris_display = os.path.join(here, '..', 'libexec', 'irank', 'mpris-display')
-logging.debug(mpris_display)
+import os, sys, threading, time, logging, subprocess
+import irank
+from irank import mpris, mpris_display
+from irank.config import IrankOptionParser
 
-display = subprocess.Popen([sys.executable, mpris_display, 'display'])
-edit = subprocess.Popen([sys.executable, mpris_display, 'edit'])
-procs = [display,edit]
+def watch(fn, on_terminate):
+	logging.debug('thread %r executing action %r', threading.get_ident(), fn)
+	try:
+		fn()
+	except Exception as e:
+		logging.debug("Error in thread %r:", threading.get_ident(), exc_info = True)
+		print(e, file=sys.stderr)
+		# sys.exit(1)
+	finally:
+		on_terminate()
+		os._exit(1)
 
-def kill_all_except(proc):
-	for other in procs:
-		if other != proc and other.poll() is None:
-			logging.debug('thread %r killing pid %r', threading.get_ident(), other.pid)
-			other.kill()
+def main():
+	p = IrankOptionParser('%prog -d DEST playlist_name [playlist_name ...]')
+	opts, args = p.parse_args()
+	if not args:
+		def edit():
+			player = mpris.Player()
+			mpris_display.edit_loop(player)
 
-def watch(proc):
-	logging.debug('thread %r watching pid %r', threading.get_ident(), proc.pid)
-	while proc.poll() is None:
-		proc.wait()
-		logging.debug('thread %r saw pid %r status: %r', threading.get_ident(), proc.pid, proc.poll())
-		kill_all_except(proc)
+		# Note: display _should_ be runnable from a separate thread, but glib seems
+		# to be doing whacky stuff that interferes with other threads.
+		# So just punt it to another process.
+		proc = subprocess.Popen([sys.executable, mpris_display.__file__])
+		def stop():
+			logging.debug('killing %r', proc)
+			proc.kill()
+			proc.wait()
+			logging.debug('killed %r', proc)
+		edit_t = threading.Thread(target = lambda: watch(edit, stop), daemon=True).start()
+		try:
+			proc.wait()
+		except (KeyboardInterrupt, subprocess.CalledProcessError):
+			pass
+		finally:
+			sys.exit(0)
+	else:
+		player = mpris.Player()
+		track = player.track
+		os.execvp(args[0], args + [track])
 
-try:
-	threading.Thread(target = lambda: watch(display)).start()
-	threading.Thread(target = lambda: watch(edit)).start()
-	logging.debug('main thread %r ending', threading.get_ident())
-except:
-	kill_all_except(None)
+main()
