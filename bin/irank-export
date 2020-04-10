@@ -38,6 +38,7 @@ def main():
 
 	def should_ignore(filename):
 		_, ext = os.path.splitext(filename)
+		print('should_ignore(%r) -> %r' % (filename, filename in opts.leave_name or ext[1:] in opts.leave_ext))
 		return filename in opts.leave_name or ext[1:] in opts.leave_ext
 
 
@@ -54,11 +55,7 @@ def main():
 		if os.path.exists(export_dest):
 			for root, dirs, files in os.walk(export_dest, topdown=True):
 				print("scanning initial contents of: %s" % root)
-				for d in dirs[:]:
-					print("checking dir: %s" % d)
-					if should_ignore(d):
-						print("ignoring directory %s" % d)
-						dirs.remove(d)
+				dirs[:] = [d for d in dirs if not should_ignore(d)]
 
 				for f in files:
 					if should_ignore(f):
