@@ -95,9 +95,9 @@ class Output(object):
 		for path, dirnames, filenames in os.walk(self.root):
 			path = path[len(self.root):].lstrip(os.path.sep)
 			for dirname in dirnames:
-				self.extant.add_dir(os.path.join(path, dirname).decode(fsenc))
+				self.extant.add_dir(os.path.join(path, dirname))
 			for filename in filenames:
-				self.extant.add_file(os.path.join(path, filename).decode(fsenc))
+				self.extant.add_file(os.path.join(path, filename))
 		logging.debug("scanned existing: %d dirs and %d files" % (
 			len(self.extant.dirs),
 			len(self.extant.files)
