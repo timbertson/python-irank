@@ -38,8 +38,9 @@ def main():
 
 	def should_ignore(filename):
 		_, ext = os.path.splitext(filename)
-		print('should_ignore(%r) -> %r' % (filename, filename in opts.leave_name or ext[1:] in opts.leave_ext))
-		return filename in opts.leave_name or ext[1:] in opts.leave_ext
+		rv = filename in opts.leave_name or ext[1:] in opts.leave_ext
+		# print('should_ignore(%r) -> %r' % (filename, rv)
+		return rv
 
 
 	# we use hard-links, so the export_dest must be on the same device as our music!
@@ -102,7 +103,9 @@ def main():
 		if len(unwanted_files) > 0:
 			# clean up empty directories
 			for root, dirs, files in os.walk(export_dest, topdown=False):
+				if should_ignore(os.path.basename(root): continue
 				if len(dirs) == 0 and len(files) == 0:
+					print("removing empty: %s" % root)
 					os.rmdir(root)
 
 		if opts.do_sync:
