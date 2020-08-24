@@ -8,6 +8,7 @@ python3Packages.buildPythonPackage {
 	src = null;
 	name = "irank";
 	propagatedBuildInputs = pythonDeps;
+	doCheck = false;
 	fixupPhase =
 		''
 			wrapProgram "$out/bin/irank" \
