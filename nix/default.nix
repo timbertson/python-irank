@@ -1,6 +1,6 @@
 { lib, python3Packages, gnome3 }:
 let
-	pythonDeps = with python3Packages; [ mutagen pyyaml dbus-python pygobject2 ];
+	pythonDeps = with python3Packages; [ mutagen pyyaml ];
 	libSuffix = "lib/${python3Packages.python.libPrefix}/site-packages";
 	pythonpath = lib.concatStringsSep ":" (map (dep: "${dep}/${libSuffix}") pythonDeps);
 in

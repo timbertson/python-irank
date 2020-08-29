@@ -1,2 +1,0 @@
-#!/bin/bash
-MPRIS_REMOTE_PLAYER=banshee exec "$(dirname "$0")/irank-mpris"
