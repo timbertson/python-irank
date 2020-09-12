@@ -5,14 +5,11 @@ from irank.config import IrankOptionParser, realpath
 
 def run(path, conditions):
 	db = sqlite3.connect(path)
-	try:
-		for result in db.execute("select path from songs where " + conditions):
-			print(result[0])
-	finally:
-		db.commit()
+	for result in db.execute("select path from songs where " + conditions):
+		print(result[0])
 
 if __name__=='__main__':
 	p = IrankOptionParser("""usage: %prog [options] condition""")
 	opts, args = p.parse_args()
 	path = realpath(os.path.join(opts.irank, "irank.sqlite"))
-	sys.exit(run(path, *args))
+	run(path, *args)

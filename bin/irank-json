@@ -1,0 +1,50 @@
+#!/usr/bin/env python3
+
+import os, sys, sqlite3, json
+from irank.core import KEYS
+from irank.config import IrankOptionParser, realpath
+
+def print_kv(dest, k, v, first=False):
+	if not first:
+		print(',', end='', file=dest)
+	print(json.dumps(k) + ": " + json.dumps(v), file=dest)
+
+def run(path, dest):
+	db = sqlite3.connect(path)
+	schema = None
+
+	cursor = db.execute("select * from songs")
+	# print(repr(cursor.description))
+	key_to_index = {}
+	for (idx, column) in enumerate(cursor.description):
+		key_to_index[column[0]] = idx
+
+	print('{', file=dest)
+	print_kv(dest, 'keys', KEYS, first=True)
+	print(','+json.dumps("files")+ ":{", file=dest)
+	first = True
+	# print(repr(key_to_index))
+	for result in cursor:
+		# print(repr(result))
+		values = list(map(lambda key: result[key_to_index[key]], KEYS))
+		value = {
+			'mtime': int(result[key_to_index['updated_at']]),
+			'ratings': values,
+		}
+		print_kv(dest, result[key_to_index['path']], value, first=first)
+		if first:
+			first = False
+	print('}}', file=dest)
+
+if __name__=='__main__':
+	p = IrankOptionParser("""usage: %prog [options] condition""")
+	p.add_option('-o', '--output', help='write to FILE instead of stdout')
+	opts, args = p.parse_args()
+	assert not args, "Too many arguments"
+	path = realpath(os.path.join(opts.irank, "irank.sqlite"))
+	if opts.output:
+		with open(opts.output, 'w') as f:
+			run(path, dest=f)
+	else:
+		run(path, dest=sys.stdout)
+
