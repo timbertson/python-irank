@@ -4,6 +4,7 @@ import irank
 import stat
 import sys
 import re
+import logging
 
 def sanitise_column_name(s):
 	return re.sub('[^a-zA-Z]', '_', s)
@@ -42,9 +43,11 @@ def load(path):
 		raise RuntimeError("Can't open file at %r: %s" % (path,e))
 
 def add_songs(music_root, db, verbose):
+	logging.info("adding songs from %s", music_root)
 	for path, dirs, files in os.walk(music_root):
 		for file in files:
 			filepath = os.path.join(path, file)
+			logging.debug("loading %s", filepath)
 			try:
 				song = irank.Song(filepath)
 			except irank.Song.ErrorClasses() as e:

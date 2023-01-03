@@ -56,12 +56,7 @@ class MutagenSong(BaseSong):
 	DEFAULT_COMMENT = u''
 	DEFAULT_LANG='eng'
 	DEFAULT_LANG='eng'
-	POSSIBLE_KEYS = [
-		u"COMM::%s" % (DEFAULT_LANG,),
-		u"COMM:Comment:XXX",
-		u"COMM::XXX",
-		u"COMM:c0:XXX",
-	]
+	DEFAULT_KEY = u"COMM::%s" % (DEFAULT_LANG,)
 	
 	@staticmethod
 	def ErrorClasses():
@@ -83,22 +78,23 @@ class MutagenSong(BaseSong):
 			self.file.add_tags()
 
 	def _get_comment(self):
-		# debugging...
-		# logging.debug('posible comments: %s', '\n'.join(map(repr, list(filter(lambda item: item[0].startswith('COMM:'), self.file.items())))))
 		comment = u''
-		self._comment_keys = []
-		for key in self.POSSIBLE_KEYS:
-			tag = self.file.get(key, None)
-			if tag is not None:
-				comment += self._tag_value(tag)
-				self._comment_keys.append(key)
+		comment_keys = []
+		for key, value in self.file.items():
+			if not key.startswith('COMM:'): continue
+			logging.debug('Parsing comment key %r: %r', key, value)
+			comment += self._tag_value(value)
+			comment_keys.append(key)
+		self._comment_keys = comment_keys
+
 		logging.debug('comment keys = %r, comment = %r', self._comment_keys, comment)
 		return comment
 	
 	def _set_comment(self, comment):
-		comment_keys = self._comment_keys or self.POSSIBLE_KEYS[:1]
+		comment_keys = self._comment_keys or [self.DEFAULT_KEY]
 		primary_key = comment_keys[0]
 		secondary_keys = comment_keys[1:]
+		logging.debug('Writing to comment key %r, deleting %r. Comment value: %r', primary_key, secondary_keys, comment)
 		self.file[primary_key] = self._make_comment(comment)
 		for key in secondary_keys:
 			del self.file[key]
