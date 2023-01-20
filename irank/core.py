@@ -119,7 +119,10 @@ class Values(dict):
 	def __parse(self, comment):
 		for match in irank_marker.finditer(comment):
 			key, value = match.groups()
-			self[key] = int(value)
+			try:
+				self[key] = int(value)
+			except KeyError:
+				logging.debug('Ignoring comment key %r: %r', key, value)
 
 	def __str__(self):
 		summary = []
