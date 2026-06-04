@@ -1,4 +1,4 @@
-{ lib, python3Packages, gnome3 }:
+{ lib, python3Packages }:
 let
 	pythonDeps = with python3Packages; [ mutagen pyyaml ];
 	libSuffix = "lib/${python3Packages.python.libPrefix}/site-packages";
@@ -8,6 +8,8 @@ python3Packages.buildPythonPackage {
 	src = null;
 	name = "irank";
 	propagatedBuildInputs = pythonDeps;
+	pyproject = true;
+	build-system = [ python3Packages.setuptools ];
 	doCheck = false;
 	fixupPhase =
 		''
